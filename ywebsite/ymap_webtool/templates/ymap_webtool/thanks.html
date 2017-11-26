@@ -1,0 +1,33 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script type="text/javascript" src=https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js>
+    </script>
+
+</head>
+
+<body>
+    <script>
+
+    window.onload = function () {
+        $.ajax({
+                url: '/ymap_webtool/result',
+                type: "GET",
+                data: {  },
+                success: function (data) { 
+				alert("The browser is now going to download the results")
+				window.location = '/ymap_webtool/result';
+				},
+                complete: function () { },
+                error: function () { }
+        });
+    }
+    </script>
+    <p id="message">
+        Thanks for your submission fam
+    </p>
+
+</body>
+
+</html>

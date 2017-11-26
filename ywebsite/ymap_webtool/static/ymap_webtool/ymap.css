@@ -1,0 +1,337 @@
+/*CSS ORGANISATION: FUN
+  F, flat hierarchy of selectors: it is recommended to use the classes to select items, avoid a cascade without the need, and do not use ids.
+  U, utility styles: it is encouraged to create the service atomic styles for solving typical makeup tasks, for example, w100 for width: 100%; or fr for float: right;
+  N, name-spaced components: Ben recommends to add namespaces for specifying the styles of specific modules elements. This approach will avoid overlapping in class names.
+*/
+ 
+ /* reminder
+
+padding: top, rigth, bottom, left
+border-radius:  top-left, top-right,  bottom-right, a bottom-left corner
+
+ pixels/16=em
+ use reslative width value
+ */
+
+/*-----------------------------------------------------UTILITY STYLE*------------------------------------------------------*/
+.w100{
+  width: 100%;
+}
+
+.inline{
+  display : inline-block;
+}
+
+/*main greenish color for text*/
+.t_col1{
+  color:#558C89;
+}
+
+/*grey color for text*/
+.t_col2{
+  color: #555555;
+}
+
+
+/*main greenish color for background*/
+.b_col1{
+   background-color:#558C89;
+}
+
+/*tints of main greenish colol for bakground*/
+.b_col2{
+  background-color: #e3eceb;
+}
+/*shade of main greensih color for bakcground - user for hoover*/
+.b_col3{
+ background-color: #3B625F;
+}
+
+/*lettering for header top rigth*/
+.font_header{
+  font-family: 'Segoe UI',Arial,sans-serif;
+  letter-spacing: 4px;
+}
+   
+
+
+/*----------------------------------------------------RESPONSIVE WEB--------------------------------------------------*/
+   /* deal with the size of compartiment that are inside an other compartiment */
+  html {
+    box-sizing: border-box;  /*so the size of a compartement include padding and border*/
+  }
+  
+  *, *:before, *:after {    /*so the size of a compartement is hinerited from the parent*/
+    box-sizing: inherit;
+  }
+
+   /* deal with box resizing upon windows content */
+      /*when the screen size < 700px*/
+      @media (max-width: 700px) {
+       .header_rigth {
+           display: none!important;
+       }
+      }
+      
+/* ----------------------------------------------------------------PAGE--------------------------------------------------------*/   
+body{  
+    /*font*/
+    font-family:verdana;
+    font-size: 16px;
+    
+     /* Box*/
+     padding: 0px 0px 0px 0px;
+     margin: 1em 0px 20px 0px;
+    }
+
+/* ----------------------------------------------------------------HEADER--------------------------------------------------------*/
+.header{
+    /*font*/
+    background-color: white;
+    font-family: 'Segoe UI',Arial,sans-serif;
+    
+    /*box setting*/
+    height: 4em;
+    padding: 1em 13px 0em 13px;
+}
+
+.logo{  
+    font-weight: bold;
+    letter-spacing: 3px;
+    font-size: 2em;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.header_rigth{
+    position:absolute;
+    right:13px; /*must be the same as .header padding rigth*/
+    letter-spacing: 4px;
+    line-height: 3em; /*sets the amount of space used for lines, such as in text*/
+}
+
+
+/* -------------------------------------------------------MAIN MENU----------------------------------------------------------*/
+.H_menu{
+    margin: 0;
+    padding: 0;
+    height: 2.5em;
+    overflow: hidden;
+}
+
+.H_menu_item{
+    vertical-align: middle;
+    line-height: 2.5; /*same as menu heigth*/
+}
+
+
+
+/*Place the contact menu item to the far rigth*/
+.H_menu_item:last-child {
+    float: right;
+}
+
+
+
+/* -------------------------------------------------------ABOUT MENU----------------------------------------------------------*/
+.V_menu{
+  margin: 0 0 0 0 ;
+  padding: 0 0 58px 0 ;
+  width:  12em;
+  display: block;
+  /* overflow-y: scroll; Enable scrolling if the sidenav has too much content */
+  overflow-x: hidden;
+  position: absolute;
+  height: 100%;
+}
+
+.V_menu_ul{
+ width: inherit;
+    }
+
+.V_menu_item {
+    display: block;
+    padding: 1em 0 1em 0;
+  
+}
+
+
+
+/* -------------------------------------------------------COMMMUN CSS MENU----------------------------------------------------------*/
+
+.H_menu_ul, .V_menu_ul{
+    padding: 0em 13px 0em 13px;
+    margin: 0;
+    list-style-type: none;
+}
+
+/*link inside the menu item*/
+.H_menu_item a, .V_menu_item  a{
+    color: white;
+    text-align: center;
+    padding: 15px 16px;  /*define the area for the hover*/
+    text-decoration: none;
+}
+
+/*change the color of the menu item when cursor on it*/
+.H_menu_item a:hover, .V_menu_item:hover{
+    background-color: #3B625F;
+}
+
+/*change the color of the menu item corresponding to the active page*/
+.active{
+ background-color: #3B625F;
+}
+
+/* -------------------------------------------------------------BANDEROLE---------------------------------------------------------------*/
+.yeast_picture {
+    /*why is it not from left to rigth*/
+    width: 100%;
+    height: 15em;
+    background-image: url('Saccharomyces_cerevisiae.jpg');
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 0; 
+    margin: 0;
+    background-size: 100%;
+}
+/* --------------------------------------------------------------CONTENT------------------------------------------------------------*/
+
+.content{ 
+  margin: 0px 27px 0px 27px;
+}
+
+.about_content{
+ margin: 2em 27px 2em 20%;
+ height: 100%;
+}
+
+h1{
+ font-size: 25px;
+}
+
+h2{
+ font-size: 18px;
+}
+
+/* --------------------------------------------------------------FORM INPUT FILE------------------------------------------------------------*/
+
+.input_form{
+   margin:0 auto;
+   width:459px; /* change if want to display optionnal fields*/ 
+}
+.mendatory{
+    /*width: 48%; uncomment if want to display optionnal fields*/ 
+    vertical-align:top;
+    padding: 0 ;
+    /*wmargin: 0 1em 0 0; uncomment if want to display optionnal fields*/ 
+    border-radius: 6px;
+}
+
+.optional{
+    width: 48%;   
+    vertical-align:top;
+    border-radius: 6px;
+    margin: 0 0 0 1em;
+}
+
+.input_header{
+  padding: 1em;
+  text-align: center;
+  margin: 0 auto;
+}
+
+.form_opt_input{
+    right: 13px;
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.input_background{
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.input_filename{
+ margin: 1em 4em 1em 5em;
+ padding: 1em;
+ border: 1px solid #ccc;
+ border-radius: 4px;
+ text-align: center;
+}
+
+.browse{
+ font-size: 13px;
+}
+
+.input_file{
+    opacity: 0;
+    background-color:#558C89!important
+}
+
+.input_submit{
+ text-align: center; 
+}
+
+/* --------------------------------------------------------------FORM CONTACT--------------------------------------------------------*/
+
+
+.contact_header{
+    width: 498px;
+    text-align: center;
+    padding: 17px 0px 0px 0px;
+    font-size: 2em;
+    margin: 0 auto;
+}
+.contact_label {
+    display:block;
+    margin-top:20px;
+    letter-spacing:2px;
+}
+
+/* Centre the form within the page */
+.contact_form {
+    margin:0 auto;
+    width:459px;
+}
+
+/* Style the text boxes */
+.contact_input, .contact_textarea {
+	width:439px;
+	background:#efefef;
+	border:1px solid #dedede;
+	padding:10px;
+	margin-top:3px;
+	font-size:0.9em;
+	color:#3a3a3a;
+  -moz-border-radius:5px;
+  -webkit-border-radius:5px;
+  border-radius:5px;
+}
+
+.contact_textarea {
+	height:213px;
+}
+
+.contact_submit{
+ text-align: center; 
+}
+
+
+/*--------------------------------------------------------------FORM COMMUN CSS--------------------------------------------------------*/
+
+input[type=submit], .browse{
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer; /*change the cursor to an hand*/
+    background-color:#558C89
+}
+
+input[type=submit]:hover, .browse:hover{
+    background-color: #3B625F;
+}

@@ -1,0 +1,34 @@
+
+<html>
+
+<head>
+{% load static %}
+    <meta charset="utf-8" />
+    <script type="text/javascript" src=https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js>
+    </script>
+
+</head>
+
+<body>
+    <script>
+
+    window.onload = function () {
+        $.ajax({
+                url: '/ymap_webtool/processing',
+                type: "GET",
+                data: {},
+                success: function (data, textStatus, JQXHR) {
+				window.location.href = '/ymap_webtool/post_submission';
+				},
+                complete: function () { },
+                error: function () { }
+        });
+    }
+    </script>
+    <p id="message">
+        Your job is submitted and being processed. please be pationes
+    </p>
+
+</body>
+
+</html>
