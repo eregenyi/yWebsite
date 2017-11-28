@@ -5,11 +5,11 @@ class StringForm(forms.Form):
     '''
     This class is an abstraction of string input
     '''
-    your_name = forms.CharField(label='Your name', max_length=100)
+    query = forms.CharField(label='Query')
     #label: specifies a human-friendly label
     #max_length: maximum nr of characters (the browser will prevent you to enter a longer text)
     #the Form class has an isValid() method, that checks whether the upper constraints are enforced
-    #right now, the form saves values into a dictionary. W could leverage this to specify multiple input fields (a-mail, job name, etc)
+    #right now, the form saves values into a dictionary. W could leverage this to specify multiple input fields (e-mail, job name, etc)
     
 class UploadFileForm(forms.Form):
     '''

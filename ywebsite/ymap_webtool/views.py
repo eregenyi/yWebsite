@@ -65,10 +65,10 @@ def publications(request):
     #Specify the template to the Publications page
     return render(request, 'ymap_webtool/publications.html')
 
-def post_submission(request):
+def finished(request):
     #Specify template to the page to display after submission
-    logger.debug("time to give back the thanks page with the script for downloading the results")
-    return render(request, 'ymap_webtool/thanks.html')
+    logger.debug("time to give back the finished page with the script for downloading the results")
+    return render(request, 'ymap_webtool/finished.html')
 
 def submission_fail(request):
     #Specify template to the page to display if submission fails
@@ -79,7 +79,7 @@ def submission_fail(request):
 Checks whether the input file contains protein or gene level mutations, and runs a ymap function accordingly to map.
 zips the results
 deletes the original results, keeps only the zip file ?
-@return redirects to ymap_webtool/post_submission.
+@return redirects to ymap_webtool/finished.
 '''
 def processing(request):
     logger.debug("started processing the job")
@@ -91,19 +91,21 @@ def processing(request):
         #os.rename(os.path.join(input_path, input_file_name), os.path.join(input_path, gene_level_input_name))
         logger.debug("now the file " + input_file_name + " is renamed to " + gene_level_input_name)
         #run_ygenes()
+        logger.debug("finished processing the job")
     else:
+        logger.debug("ERROR! Neither gene nor protein file!")
         return HttpResponseRedirect('submission_fail')
     
-    logger.debug("finished processing the job")
     #make_archive(os.path.join(output_path,'results'), 'zip', root_dir = output_path)
     logger.debug("made an archive")
     # wipe original results folder
     # maybe keep the archive?
-    return HttpResponseRedirect('post_submission')
+    return HttpResponseRedirect('finished')
 
-def job_submitted(request):
+
+def submitted(request):
     logger.debug("the job should be submitted and passed to processing")
-    return render(request, 'ymap_webtool/job_submitted.html')
+    return render(request, 'ymap_webtool/submitted.html')
 
 
 '''
@@ -122,9 +124,9 @@ def get_string(request):
         if form.is_valid():
             # process the data in form.cleaned_data as required
             # redirect to a new URL:
-            save_string(form.cleaned_data.get('your_name'), input_path, input_file_name)
+            save_string(form.cleaned_data.get('query'), input_path, input_file_name)
             #Process data here with a separate pydev class?
-            return HttpResponseRedirect('job_submitted')
+            return HttpResponseRedirect('submitted')
 
     # if a GET (or any other method) we'll create a blank form
     else:
@@ -144,7 +146,7 @@ def get_file(request):
         if validate_file_type(request.FILES['myfile'].name) is True:
             save_file(request.FILES['myfile'], input_path, input_file_name)
             logger.debug("get_file ran succcesfully")
-            return HttpResponseRedirect('job_submitted')
+            return HttpResponseRedirect('submitted')
         else:
             return HttpResponseRedirect('submission_fail')
     
@@ -177,7 +179,13 @@ If you want to perform more thorough file format checks, try magic, django-clama
 
 def validate_file_type(title):
     return bool(re.match('.+\.txt$', title))
-    
+
+
+'''
+This function returns true if the tab delimited file has 2 columns
+@param file: should be given as: path + filename + extension. file to analyse.
+'''    
+
 def is_protein(file):
     num_cols = 0
     with open(file) as f:
@@ -186,6 +194,11 @@ def is_protein(file):
         num_cols = len(first_row)
     logger.debug("number of columns in the uploaded file: " + str(num_cols))
     return bool(num_cols is 2)
+
+'''
+This function returns true if the tab delimited file has 5 columns
+@param file: should be given as: path + filename + extension. file to analyse.
+'''
     
 def is_gene(file):
     num_cols = 0
@@ -195,3 +208,4 @@ def is_gene(file):
         num_cols = len(first_row)
     logger.debug("number of columns in the uploaded file: " + str(num_cols))
     return bool(num_cols is 5)
+

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Home</title>
+
+<!--encoding type-->
+<meta charset="UTF-8">
+
+<!--CSS file containing style-->
+<link rel="stylesheet" type="text/css" href="ymap.css">
+
+<!--responsive html so teh content fit to the screen-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--Bootstrap library-->
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+</head>
+
+<body>
+        
+<!--------------------------------------------------------------HEADER--------------------------------------------------------------------->
+<div class= "header w100">
+            <!--left-->
+            <a  class = "inline logo t_col2" id = "logo" href="//www.yMap.com"> yMap
+            <span class= "t_col1" id = "dotcom">.com</span>
+            </a>
+       
+            <!--right-->
+            <div class = "inline header_rigth t_col2"  id = "yMap_Acro_top" >YEAST GENOTYPE TO PHENOTYPE MAP
+            </div>
+</div>
+
+
+
+<!--------------------------------------------------------------MENU--------------------------------------------------------------------->
+<div class= "H_menu w100 b_col1">
+            <ul class="H_menu_ul">
+                        <li id="menu_home" class ="H_menu_item inline active"><a href="home.html">Home</a></li>
+                        <li id="menu_publication" class ="H_menu_item inline"><a href="publications.html">Publications</a></li>
+                        <li id="menu_about" class ="H_menu_item inline"><a href="overview.html">About</a></li>
+                        <li id="menu_troubleshooting" class ="H_menu_item inline"><a href="troubleshooting.html">Troubleshooting</a></li>
+                        <li id="menu_contact" class ="H_menu_item inline"><a href="contact.html">Contact</a></li>
+            </ul>     
+</div>
+
+
+            
+<!--------------------------------------------------------------BANDEROLE--------------------------------------------------------------->
+<div class = "yeast_picture" >
+</div>
+
+<div class= "content">
+<!-------------------------------------------------------YMAP DESCRIPTION------------------------------------------------------------>
+
+<div>
+            <p>          
+            yMap is a python based fast and robust automated method to map large yeast variants data to proteins features and post translational modifications.
+            </p>
+</div>
+
+<!--------------------------------------------------------------FORMS--------------------------------------------------------------------->
+<div >
+            
+			<form class = "input_form" action="get_string" method="post">
+				{% csrf_token %}
+				<div class = "mendatory"> <!-- add inline if want to display optional field-->
+					<header class="input_header ">
+                        <p class="input_header font_header">SELECT YOUR INPUT FILE</p>
+					</header>
+					<div class = "input_background b_col2">
+						<input id="your_name" type="text" name="your_name" value="{{ current_name }} placeholder="Upload local TEXT file" required= true">
+						<label class= "browse inline" for="browse_txt"> Browse </label>
+					</div> 
+                        <input type="file" class="input_file inline" name="browse.txt" id="browse_txt" accept=".txt" >	
+					</div>
+				</div>
+			</form>
+
+                                       <!--champ MUST has a name if not they will not be sent-->
+
+                        <!--champ optional - uncomment to show it -->
+                        <!--<div class ="optional inline b_col2">
+                       
+                              <legend class ="b_col1 form_top">Leave your email if you want to be notified when the jb is done!</legend>
+                      
+                                    <!--champ email -->
+                               
+                                  <!--  <input type="email" class="form_opt_input" id="email" name="user_email" placeholder="Enter your email">
+            
+                                    <!--champ query label-->
+                                   
+                                   <!-- <input type="text" class="form_opt_input" id="lname" name="user_queryName" placeholder="Enter a query name">
+                                    
+                                    <!--champ query description-->
+                                   
+                                  <!--  <input type="textarea" class="form_opt_input" id="lname" name="user_queryComment" placeholder="Enter a query description">
+            
+                       <!-- </div> -->
+                        
+                        <div class="contact_submit">
+                        <!--submit button-->
+                        <input class = "input_submit" type="submit" value="Submit">
+                        </div>
+            </form>
+            
+</div>
+</div>
+</body>
+</html>
