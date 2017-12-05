@@ -4,30 +4,38 @@
     <meta charset="utf-8" />
     <script type="text/javascript" src=https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js>
     </script>
-
-</head>
-
-<body>
     <script>
-
-    window.onload = function () {
-        $.ajax({
+	
+function my_download() {
+   $.ajax({
                 url: '/ymap_webtool/result',
                 type: "GET",
                 data: {  },
-                success: function (data) { 
+                success: function () { 
 				alert("The browser is now going to download the results")
-				window.location = '/ymap_webtool/result';
+					location = '/ymap_webtool/result';
 				},
                 complete: function () { },
                 error: function () { }
         });
-    }
+	};
+
+window.onload = my_download; 
+		
     </script>
+</head>
+
+<body>
+
     <p id="message">
         Thanks for your submission fam
     </p>
 
+
 </body>
 
 </html>
+
+
+				
+				

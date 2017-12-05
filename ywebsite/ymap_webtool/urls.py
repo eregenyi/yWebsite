@@ -14,5 +14,6 @@ urlpatterns = [
     url(r'test', views.test_page, name='test_page'),
     url(r'processing', views.processing, name='processing'),
     url(r'result', views.download_result, name='download_result'),
+    url(r'clean_up', views.clean_up, name='clean_up'),
     url(r'submitted', views.submitted, name='submitted'),
 ]

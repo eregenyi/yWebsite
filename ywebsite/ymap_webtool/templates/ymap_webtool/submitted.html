@@ -21,12 +21,14 @@
 				window.location.href = '/ymap_webtool/finished';
 				},
                 complete: function () { },
-                error: function () { }
+                error: function () { 
+				window.location.href = '/ymap_webtool/submission_failed';
+				}
         });
     }
     </script>
     <p id="message">
-        Your job is submitted and being processed. please be pationes
+        Your job is submitted and being processed. please be patient
     </p>
 
 </body>
