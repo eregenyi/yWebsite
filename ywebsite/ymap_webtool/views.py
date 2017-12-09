@@ -56,17 +56,43 @@ def index(request):
     #specify the template to the Main page here. Django by default looks for templates in the templates folder
     return render(request, 'ymap_webtool/index.html')
 
-def manual(request):
-    #specify the template to the Manual/help page here.
-    return render(request, 'ymap_webtool/manual.html')
-
-def about(request):
-    #specify the template to the About page here
-    return render(request, 'ymap_webtool/about.html')
-
 def publications(request):
     #Specify the template to the Publications page
     return render(request, 'ymap_webtool/publications.html')
+
+
+def overview (request):
+    #specify the template to the about/overview page here.
+    return render(request, 'ymap_webtool/overview.html')
+
+def process (request):
+    #specify the template to the about/process page here.
+    return render(request, 'ymap_webtool/process.html')
+
+def databases (request):
+    #specify the template to the about/databases page here.
+    return render(request, 'ymap_webtool/databases.html')
+
+def input_format (request):
+    #specify the template to the about/input-format page here.
+    return render(request, 'ymap_webtool/input_format.html')
+
+def results (request):
+    #specify the template to the about/results page here.
+    return render(request, 'ymap_webtool/results.html')
+
+def how_to_cite(request):
+    #specify the template to the about/how-to-cite page here
+    return render(request, 'ymap_webtool/how_to_cite.html')
+
+def troubleshooting(request):
+    #specify the template to the troubleshootingpage here
+    return render(request, 'ymap_webtool/troubleshooting.html')
+
+def contact(request):
+    #specify the template to the about/contact page here
+    return render(request, 'ymap_webtool/contact.html')
+
 
 def finished(request):
     #Specify template to the page to display after submission

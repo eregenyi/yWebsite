@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Process</title>
+
+<!--encoding type-->
+<meta charset="UTF-8">
+
+<!--CSS file containing style-->
+{% load static %} <!--this help load the static file-->
+<link rel="stylesheet" type="text/css" href="{% static 'ymap_webtool/ymap.css' %}" />
+
+<!--responsive html so teh content fit to the screen-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--Bootstrap library-->
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+</head>
+
+<body>
+        
+<!--------------------------------------------------------------HEADER--------------------------------------------------------------------->
+<div class= "header w100">
+            <!--left-->
+            <a  class = "inline logo t_col2" id = "logo" href="//www.yMap.com"> yMap
+            <span class= "t_col1" id = "dotcom">.com</span>
+            </a>
+       
+            <!--right-->
+            <div class = "inline header_rigth t_col2"  id = "yMap_Acro_top" >YEAST GENOTYPE TO PHENOTYPE MAP
+            </div>
+</div>
+
+
+
+<!--------------------------------------------------------------MENU--------------------------------------------------------------------->
+<div class= "H_menu w100 b_col1">
+            <ul class="H_menu_ul">
+                        <li id="menu_home" class ="H_menu_item inline"><a href={% url 'index' %}>Home</a></li>
+                        <li id="menu_publication" class ="H_menu_item inline"><a href={% url 'publications' %}>Publications</a></li>
+                        <li id="menu_about" class ="H_menu_item inline active"><a href={% url 'overview' %}>About</a></li>
+                        <li id="menu_troubleshooting" class ="H_menu_item inline"><a href={% url 'troubleshooting' %}>Troubleshooting</a></li>
+                        <li id="menu_contact" class ="H_menu_item inline"><a href={% url 'contact' %}>Contact</a></li>
+            </ul>     
+</div>
+
+
+            
+<!--------------------------------------------------------------BANDEROLE--------------------------------------------------------------->
+<div class = "yeast_picture" >
+</div>
+
+<!--------------------------------------------------------------VERTICAL MENU--------------------------------------------------------------->
+           
+<div class= "V_menu b_col1">
+            <ul class="V_menu_ul b_col1">
+                        <li id="menu_overview" class ="V_menu_item "><a href={% url 'overview' %}>Overview</a></li>
+                        <li id="menu_process" class ="V_menu_item active"><a href={% url 'process' %}>Process</a></li>
+                        <li id="menu_databases" class ="V_menu_item "><a href={% url 'databases' %}>Databases</a></li>
+                        <li id="menu_inputformat" class =" V_menu_item"><a href="input_format.html">Input format</a></li>
+                        <li id="menu_results" class ="V_menu_item "><a href={% url 'results'%}>Results</a></li>
+                        <li id="menu_howtocite" class ="V_menu_item "><a href={% url 'how_to_cite'%}>How to cite</a></li>
+            </ul>     
+</div>
+
+<!--------------------------------------------------------------CONTENT--------------------------------------------------------------->
+
+<div class= "about_content">
+            
+            <h1>
+            STEP 1: Mutation at DNA level to protein level (optional)
+            </h1>
+            <p>
+            When the input file contain mutations at DNA level, it is translated to protein level for yMap
+            to be able to process. All the non-synonymous mutation are reported in a file that will be use as input by the core
+            function of yMap.
+            </p>
+            
+            <h1>
+            STEP 2: Mapping the mutations to protein features and post translational modifications.
+            </h1>
+            <p>
+            The mutations at protein level are mapped to protein features and post translational modifications. yMap generate a report file
+            for each types of protein features and post translational modifications that contains/overlaps with mutations from the input file.
+            
+            <h2>Protein features:</h2>
+            <ul>
+                        <li>proteins domains</li>
+                                        
+                        <li>proteins-nucleotide binding domains</li>
+                                    
+                        <li>proteins structural regions</li>
+                            
+                        <li>proteins active and binding sites</li>
+            </ul>
+            
+            <h2>Post translational modifications:</h2>
+            <ul>
+                        <li>PTM present at the interface of two proteins and known to play role in interaction (Beltrao et al. Cell 2012)</li>
+                        <li>PTM present at the interface of two proteins and known to play role in interaction (Beltrao et al. Cell 2012)</li>
+                        <li>PTMs (predicted) involved in the crosstalk within a given protein at baker's years (Minguez el 2012)</li>
+                        <li>PTMs (predicted) involved in the crosstalk in different proteins at baker's years (PTMcode 2.0; Minguez el 2012)</li>
+                        <li>PTMs containing motifs in a close proximity are named hotspots (Beltrao et al. Cell 2012)</li>
+            </ul>
+            </p>
+             
+            <h1>
+            STEP 3: GO enrichment analysis
+            </h1>
+            <p>
+            A Go enrichement analysis is performed for thes set of proteins containing mutation located in functional region.
+            It uses the function <i>get_enriched_terms</i> from the
+            <a href= http://orange-bioinformatics.readthedocs.io/en/latest/reference/go.html>orange bioinformatics package</a>.  
+            The p-value of the Go enrichement analysis is calculated against the background of the complete genome (Demšar et al., 2013).
+            </p>
+            
+            <h1>
+            STEP 4: Biogrid id
+            </h1>
+            <p>
+            yMap report the biogrid id for each mutated protein. <a href= https://thebiogrid.org/>The Biological General Repository for Interaction Datasets (BioGRID)</a>  
+             is a public database that archives and disseminates genetic and protein interaction data from model organisms and humans.         
+            </p>
+            
+            
+            <h1>
+            STEP 5: Final report
+            </h1>
+            <p>
+            All the analyses are summarized in a ‘final-report’ with the proteins that have variants in different above mentioned protein functional regions, the type of mutation (synonymous or non- synonymous), feature, feature type and source of data.
+            The report is complemented with enrichments file and a BioGrid ids containing file.
+            </p>
+</div>
+</div>
+</body>
+</html>

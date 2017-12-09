@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Submitted</title>
+<title>Result_page</title>
 
 <!--encoding type-->
 <meta charset="UTF-8">
@@ -10,15 +10,14 @@
 {% load static %} <!--this help load the static file-->
 <link rel="stylesheet" type="text/css" href="{% static 'ymap_webtool/ymap.css' %}" />
 
+<!--<link rel="stylesheet" type="text/css" href="ymap.css">-->
+
 <!--responsive html so teh content fit to the screen-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!--Bootstrap library-->
 <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
 
-<!--script added from eni's template-->
-<script type="text/javascript" src=https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js>
-</script>
 </head>
 
 <body>
@@ -54,29 +53,24 @@
 <div class = "yeast_picture" >
 </div>
 
-<div class= "content">
+<!--------------------------------------------------------------DOWNLOAD  FORM--------------------------------------------------------------->
     
-    <!--eni's part from template-->
-     <script>
-    window.onload = function () {
-        $.ajax({
-                url: '/ymap_webtool/processing',
-                type: "GET",
-                data: {},
-                success: function (data, textStatus, JQXHR) {
-				window.location.href = '/ymap_webtool/finished';
-				},
-                complete: function () { },
-                error: function () { 
-				window.location.href = '/ymap_webtool/submission_failed';
-				}
-        });
-    }
-    </script>
-    <p id="message">
-        Your job is submitted and being processed. please be patient
-    </p>
-</div>
+<div class = "download_form">
+            <header class="body">
+                        <p class="contact_header font_header fs_medium">Your submition has finished, click on the button below to download the results</p>
+            </header>
+            
+            <section class="body">
+                        <form class="contact_form" method="get" action="file.doc">
+                                    <div class= "centered">
+                                                <button class= download type="submit">Download</button>
+                                    </div>
+                        </form>
+            </section>
+            
+            <footer class="body">
+            </footer>
+<div>
 </body>
 </html>
 

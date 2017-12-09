@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Submitted</title>
+<title>Contact</title>
 
 <!--encoding type-->
 <meta charset="UTF-8">
@@ -10,15 +10,11 @@
 {% load static %} <!--this help load the static file-->
 <link rel="stylesheet" type="text/css" href="{% static 'ymap_webtool/ymap.css' %}" />
 
+<!--<link rel="stylesheet" type="text/css" href="ymap.css">-->
+
 <!--responsive html so teh content fit to the screen-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!--Bootstrap library-->
-<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-
-<!--script added from eni's template-->
-<script type="text/javascript" src=https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js>
-</script>
 </head>
 
 <body>
@@ -44,7 +40,7 @@
                         <li id="menu_publication" class ="H_menu_item inline"><a href={% url 'publications' %}>Publications</a></li>
                         <li id="menu_about" class ="H_menu_item inline"><a href={% url 'overview' %}>About</a></li>
                         <li id="menu_troubleshooting" class ="H_menu_item inline"><a href={% url 'troubleshooting' %}>Troubleshooting</a></li>                        
-                        <li id="menu_contact" class ="H_menu_item inline"><a href={% url 'contact' %}>Contact</a></li>
+                        <li id="menu_contact" class ="H_menu_item inline active"><a href={% url 'contact' %}>Contact</a></li>
             </ul>     
 </div>
 
@@ -54,29 +50,39 @@
 <div class = "yeast_picture" >
 </div>
 
-<div class= "content">
-    
-    <!--eni's part from template-->
-     <script>
-    window.onload = function () {
-        $.ajax({
-                url: '/ymap_webtool/processing',
-                type: "GET",
-                data: {},
-                success: function (data, textStatus, JQXHR) {
-				window.location.href = '/ymap_webtool/finished';
-				},
-                complete: function () { },
-                error: function () { 
-				window.location.href = '/ymap_webtool/submission_failed';
-				}
-        });
-    }
-    </script>
-    <p id="message">
-        Your job is submitted and being processed. please be patient
-    </p>
-</div>
+
+<!--------------------------------------------------------------CONTACT FORM--------------------------------------------------------------->
+
+    <header class="body">
+            <p class="contact_header font_header fs_big">SEND US A MESSAGE</p>
+    </header>
+
+    <section class="body">
+             <!--action specify the php scipt to be use to send the data-->
+
+            <form class="contact_form" method="post" action= contact.php>
+                                
+                        <label class="contact_label">Name</label>
+                        <input class="contact_input" name="name" type="text"placeholder="Enter your name">
+                                    
+                        <label class="contact_label">Email</label>
+                        <input class="contact_input" name="email" type="email" placeholder="Enter your email">
+                        
+                        <label class="contact_label">Subject</label>
+                        <input class="contact_input" name="subject" type="text" placeholder="Enter the subject of your message">
+						
+                        <input class="contact_invisible" name="invisible">
+                        
+                        <label class="contact_label">Message</label>
+                        <textarea class="contact_textarea" name="message" placeholder="Enter your message"></textarea>
+                        <div class="centered">
+                        <input  id="contact_submit" name="contact_submit" type="submit" value="Send">
+                        </div>    
+            </form>
+    </section>
+
+    <footer class="body">
+    </footer>
+
 </body>
 </html>
-

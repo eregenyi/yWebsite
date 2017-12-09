@@ -4,9 +4,15 @@ from . import views
 # define URL patterns, link them to the corresponding views, and name those URLs
 urlpatterns = [
     url(r'index', views.index, name='index'),
-    url(r'manual', views.manual, name='manual'),
-    url(r'about', views.about, name='about'),
     url(r'publications', views.publications, name='publications'),
+    url(r'overview', views.overview , name='overview'),
+    url(r'process', views.process , name='process'),
+    url(r'databases', views.databases , name='databases'),
+    url(r'input_format', views.input_format , name='input_format'),
+    url(r'results', views.results , name='results'),
+    url(r'how_to_cite', views.how_to_cite, name='how_to_cite'),
+    url(r'troubleshooting', views.troubleshooting, name='troubleshooting'),
+    url(r'contact', views.contact, name='contact'),
     url(r'finished', views.finished, name='finished'),
     url(r'submission_fail', views.submission_fail, name='submission_fail'),
     url(r'get_string', views.get_string, name='get_string'),
@@ -17,3 +23,4 @@ urlpatterns = [
     url(r'clean_up', views.clean_up, name='clean_up'),
     url(r'submitted', views.submitted, name='submitted'),
 ]
+

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Overview</title>
+
+<!--encoding type-->
+<meta charset="UTF-8">
+
+<!--CSS file containing style-->
+{% load static %} <!--this help load the static file-->
+<link rel="stylesheet" type="text/css" href="{% static 'ymap_webtool/ymap.css' %}" />
+
+<!--responsive html so teh content fit to the screen-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--Bootstrap library-->
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+</head>
+
+<body>
+        
+<!--------------------------------------------------------------HEADER--------------------------------------------------------------------->
+<div class= "header w100">
+            <!--left-->
+            <a  class = "inline logo t_col2" id = "logo" href="//www.yMap.com"> yMap
+            <span class= "t_col1" id = "dotcom">.com</span>
+            </a>
+       
+            <!--right-->
+            <div class = "inline header_rigth t_col2"  id = "yMap_Acro_top" >YEAST GENOTYPE TO PHENOTYPE MAP
+            </div>
+</div>
+
+
+
+<!--------------------------------------------------------------MENU--------------------------------------------------------------------->
+<div class= "H_menu w100 b_col1">
+            <ul class="H_menu_ul">
+                        <li id="menu_home" class ="H_menu_item inline"><a href={% url 'index' %}>Home</a></li>
+                        <li id="menu_publication" class ="H_menu_item inline"><a href={% url 'publications' %}>Publications</a></li>
+                        <li id="menu_about" class ="H_menu_item inline active"><a href={% url 'overview' %}>About</a></li>
+                        <li id="menu_troubleshooting" class ="H_menu_item inline"><a href={% url 'troubleshooting' %}>Troubleshooting</a></li>
+                        <li id="menu_contact" class ="H_menu_item inline"><a href={% url 'contact' %}>Contact</a></li>
+            </ul>     
+</div>
+
+
+            
+<!--------------------------------------------------------------BANDEROLE--------------------------------------------------------------->
+<div class = "yeast_picture" >
+</div>
+
+<!--------------------------------------------------------------VERTICAL MENU--------------------------------------------------------------->
+           
+<div class= "V_menu b_col1">
+            <ul class="V_menu_ul b_col1">
+                        <li id="menu_overview" class ="V_menu_item active"><a href={% url 'overview' %}>Overview</a></li>
+                        <li id="menu_process" class ="V_menu_item "><a href={% url 'process' %}>Process</a></li>
+                        <li id="menu_databases" class ="V_menu_item "><a href={% url 'databases' %}>Databases</a></li>
+                        <li id="menu_inputformat" class =" V_menu_item"><a href="input_format.html">Input format</a></li>
+                        <li id="menu_results" class ="V_menu_item "><a href={% url 'results'%}>Results</a></li>
+                        <li id="menu_howtocite" class ="V_menu_item "><a href={% url 'how_to_cite'%}>How to cite</a></li>
+            </ul>     
+</div>
+
+<!--------------------------------------------------------------CONTENT--------------------------------------------------------------->
+
+<div class= "about_content">
+            
+yMap is a python based fast and robust automated method to map large yeast variants data to 
+            
+proteins post-translational modifications,                 
+proteins domains,          
+proteins-nucleotide binding domains, 
+proteins structural regions, 
+proteins active and binding sites 
+proteins networks visualisation. 
+<br>
+<br>
+The protein features are collected from Uniprot.
+<br>
+<br>
+The post-translational modifications are collected from PTMcode 2.0 and PTMfunc.
+<br>
+<br>
+yMap generates a "final-report" which reports all the non-synonymous mutations that overlaps or falls inside the above mentioned proteins functional regions.
+The final-report is complemented GO enrichment analysis and biogrid visualisation id.
+
+</div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Submitted</title>
+<title>Troubleshooting</title>
 
 <!--encoding type-->
 <meta charset="UTF-8">
@@ -15,10 +15,6 @@
 
 <!--Bootstrap library-->
 <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-
-<!--script added from eni's template-->
-<script type="text/javascript" src=https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js>
-</script>
 </head>
 
 <body>
@@ -55,28 +51,6 @@
 </div>
 
 <div class= "content">
-    
-    <!--eni's part from template-->
-     <script>
-    window.onload = function () {
-        $.ajax({
-                url: '/ymap_webtool/processing',
-                type: "GET",
-                data: {},
-                success: function (data, textStatus, JQXHR) {
-				window.location.href = '/ymap_webtool/finished';
-				},
-                complete: function () { },
-                error: function () { 
-				window.location.href = '/ymap_webtool/submission_failed';
-				}
-        });
-    }
-    </script>
-    <p id="message">
-        Your job is submitted and being processed. please be patient
-    </p>
-</div>
+
 </body>
 </html>
-
