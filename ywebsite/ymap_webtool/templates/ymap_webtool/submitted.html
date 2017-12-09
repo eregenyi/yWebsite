@@ -17,12 +17,18 @@
                 url: '/ymap_webtool/processing',
                 type: "GET",
                 data: {},
-                success: function (data, textStatus, JQXHR) {
-				window.location.href = '/ymap_webtool/finished';
+                success: function (data, textStatus, JQXHR) { 
+					console.log(data);
+					/*
+					let d = $("<button type='button' onclick=function(e) {e.preventDefault(); window.location.href='ymap_webtool/result' ; return false;}>Click here</button>")
+					*/
+					let d = $("<a href='ymap_webtool/result'> return false</a>")
+					$("#message").append(d);
 				},
+				
                 complete: function () { },
                 error: function () { 
-				window.location.href = '/ymap_webtool/submission_failed';
+					$("#message").html("Ooops, Something went wrong. :/ Please try again. If you have seen this before, please message us about the bug!");
 				}
         });
     }

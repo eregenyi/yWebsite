@@ -12,9 +12,13 @@ function my_download() {
                 type: "GET",
                 data: {  },
                 success: function () { 
-				alert("The browser is now going to download the results")
-					location = '/ymap_webtool/result';
+					alert(data)
+					alert(textStatus)
+					alert(JQXHR)
+					alert("The browser is now going to download the results")
+					/* location = '/ymap_webtool/result'; */
 				},
+				
                 complete: function () { },
                 error: function () { }
         });
