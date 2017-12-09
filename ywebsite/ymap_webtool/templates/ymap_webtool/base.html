@@ -1,0 +1,69 @@
+<!--This is a base layout for the ymap webiste-->
+<!--it include the header, horizontal menu bar and banderole (image)-->
+<!--search for "template inheritance:" to find all the block content + explanations -->
+
+<!DOCTYPE html>
+<html>
+<head>
+
+<!--template inheritance: add page title-->
+<title>{% block title %}yMap web{% endblock %}</title>
+
+<!--encoding type-->
+<meta charset="UTF-8">
+
+<!--CSS file containing style-->
+{% load static %} <!--this help load the static file-->
+<link rel="stylesheet" type="text/css" href="{% static 'ymap_webtool/ymap.css' %}" />
+
+<!--responsive html so teh content fit to the screen-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!--Bootstrap library-->
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+
+<!--template inheritance: in case something else is needed in the head-->
+{% block head %}{% endblock %}
+</head>
+
+<body>
+        
+<!--------------------------------------------------------------HEADER--------------------------------------------------------------------->
+<div class= "header w100">
+            <!--left-->
+            <a  class = "inline logo t_col2" id = "logo" href="//www.yMap.com"> yMap
+            <span class= "t_col1" id = "dotcom">.com</span>
+            </a>
+       
+            <!--right-->
+            <div class = "inline header_rigth t_col2"  id = "yMap_Acro_top" >YEAST GENOTYPE TO PHENOTYPE MAP
+            </div>
+</div>
+
+
+
+<!--------------------------------------------------------------MENU--------------------------------------------------------------------->
+<div class= "H_menu w100 b_col1">
+            <ul class="H_menu_ul">
+						<!--template inheritance: add the class "active in the block *_class corresponding to the current page -->
+                        <li id="menu_home" class ="H_menu_item inline {% block home_class %}{% endblock %}"><a href={% url 'index' %}>Home</a></li>
+                        <li id="menu_publication" class ="H_menu_item inline {% block publication_class %}{% endblock %}"><a href={% url 'publications' %}>Publications</a></li>
+                        <li id="menu_about" class ="H_menu_item inline {% block about_class %}{% endblock %}"><a href={% url 'overview' %}>About</a></li>
+                        <li id="menu_troubleshooting" class ="H_menu_item inline {% block toubleshooting_class %}{% endblock %}"><a href={% url 'troubleshooting' %}>Troubleshooting</a></li>
+                        <li id="menu_contact" class ="H_menu_item inline {% block contact_class %}{% endblock %}"><a href={% url 'contact' %}>Contact</a></li>
+            </ul>     
+</div>
+
+
+            
+<!--------------------------------------------------------------BANDEROLE--------------------------------------------------------------->
+<div class = "yeast_picture" >
+</div>
+
+<!--------------------------------------------------------------CONTENT--------------------------------------------------------------->
+
+<!--template inheritance: add content -->
+ {% block content %}{% endblock %}
+
+</body>
+</html>

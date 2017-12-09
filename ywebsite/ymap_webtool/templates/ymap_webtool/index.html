@@ -1,59 +1,16 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Index</title>
+{% extends "ymap_webtool/base.html" %}
 
-<!--encoding type-->
-<meta charset="UTF-8">
+<!--template inheritance: add page title-->
+{% block title %}Home{% endblock %}
 
-<!--CSS file containing style-->
-{% load static %} <!--this help load the static file-->
-<link rel="stylesheet" type="text/css" href="{% static 'ymap_webtool/ymap.css' %}" />
-
-<!--<link rel="stylesheet" type="text/css" href="ymap.css">-->
-
-<!--responsive html so teh content fit to the screen-->
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!--Bootstrap library-->
-<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-</head>
-
-<body>
-        
-<!--------------------------------------------------------------HEADER--------------------------------------------------------------------->
-<div class= "header w100">
-            <!--left-->
-            <a  class = "inline logo t_col2" id = "logo" href="//www.yMap.com"> yMap
-            <span class= "t_col1" id = "dotcom">.com</span>
-            </a>
-       
-            <!--right-->
-            <div class = "inline header_rigth t_col2"  id = "yMap_Acro_top" >YEAST GENOTYPE TO PHENOTYPE MAP
-            </div>
-</div>
+<!--template inheritance: add the class "active in the block *_class corresponding to the current page -->
+{% block home_class %}active{% endblock %}">
 
 
-
-<!--------------------------------------------------------------MENU--------------------------------------------------------------------->
-<div class= "H_menu w100 b_col1">
-            <ul class="H_menu_ul">
-                        <li id="menu_home" class ="H_menu_item inline active"><a href={% url 'index' %}>Home</a></li>
-                        <li id="menu_publication" class ="H_menu_item inline"><a href={% url 'publications' %}>Publications</a></li>
-                        <li id="menu_about" class ="H_menu_item inline"><a href={% url 'overview' %}>About</a></li>
-                        <li id="menu_troubleshooting" class ="H_menu_item inline"><a href={% url 'troubleshooting' %}>Troubleshooting</a></li>
-                        <li id="menu_contact" class ="H_menu_item inline"><a href={% url 'contact' %}>Contact</a></li>
-            </ul>     
-</div>
-
-
-            
-<!--------------------------------------------------------------BANDEROLE--------------------------------------------------------------->
-<div class = "yeast_picture" >
-</div>
-
+<!--template inheritance: add content -->
+{% block content %}
 <div class= "content">
-<!-------------------------------------------------------YMAP DESCRIPTION------------------------------------------------------------>
+<!---------------------------------------------YMAP DESCRIPTION------------------------------------------------------------>
 
 <div>
             <p>          
@@ -105,8 +62,7 @@
             {% if uploaded_file_url %}
             <p>File uploaded at: <a href="{{ uploaded_file_url }}">{{ uploaded_file_url }}</a></p>
             {% endif %}
-            
+</div>         
 </div>
 </div>
-</body>
-</html>
+{% endblock %}
