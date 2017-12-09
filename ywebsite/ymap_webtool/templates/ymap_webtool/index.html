@@ -1,31 +1,112 @@
-Hey! This is the index page, Hello world from the index view. <BR>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Index</title>
 
-<!- //////////////////////// form to upload string \\\\\\\\\\\\\\\\\\\\\\ -!>
+<!--encoding type-->
+<meta charset="UTF-8">
 
-send a string <BR>
-<form action="get_string" method="post">
-	{% csrf_token %}
-		<label for="query">Query: </label>
-		<input id="query" type="text" name="query" value="{{ current_query }}">
-		<input type="submit" value="Submit" />
-</form>
-<HR>
+<!--CSS file containing style-->
+{% load static %} <!--this help load the static file-->
+<link rel="stylesheet" type="text/css" href="{% static 'ymap_webtool/ymap.css' %}" />
 
-<!- //////////////////////// form to upload file \\\\\\\\\\\\\\\\\\\\\\ -!>
+<!--<link rel="stylesheet" type="text/css" href="ymap.css">-->
 
-upload a file <BR>
-<form action="get_file" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input id="myfile" type="file" name="myfile" value="{{ current_file }}">
-    <button type="submit" value="Submit">Upload</button>
-  </form>
+<!--responsive html so teh content fit to the screen-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  {% if uploaded_file_url %}
-    <p>File uploaded at: <a href="{{ uploaded_file_url }}">{{ uploaded_file_url }}</a></p>
-  {% endif %}
-  
-<!- //////////////////////// example to Leila: this is how you should link \\\\\\\\\\\\\\\\\\\\\\ -!>
+<!--Bootstrap library-->
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+</head>
 
-  <p><a href="{% url 'index' %}">Return to home</a></p>
-  
-  
+<body>
+        
+<!--------------------------------------------------------------HEADER--------------------------------------------------------------------->
+<div class= "header w100">
+            <!--left-->
+            <a  class = "inline logo t_col2" id = "logo" href="//www.yMap.com"> yMap
+            <span class= "t_col1" id = "dotcom">.com</span>
+            </a>
+       
+            <!--right-->
+            <div class = "inline header_rigth t_col2"  id = "yMap_Acro_top" >YEAST GENOTYPE TO PHENOTYPE MAP
+            </div>
+</div>
+
+
+
+<!--------------------------------------------------------------MENU--------------------------------------------------------------------->
+<div class= "H_menu w100 b_col1">
+            <ul class="H_menu_ul">
+                        <li id="menu_home" class ="H_menu_item inline active"><a href={% url 'index' %}>Home</a></li>
+                        <li id="menu_publication" class ="H_menu_item inline"><a href={% url 'publications' %}>Publications</a></li>
+                        <li id="menu_about" class ="H_menu_item inline"><a href={% url 'overview' %}>About</a></li>
+                        <li id="menu_troubleshooting" class ="H_menu_item inline"><a href={% url 'troubleshooting' %}>Troubleshooting</a></li>
+                        <li id="menu_contact" class ="H_menu_item inline"><a href={% url 'contact' %}>Contact</a></li>
+            </ul>     
+</div>
+
+
+            
+<!--------------------------------------------------------------BANDEROLE--------------------------------------------------------------->
+<div class = "yeast_picture" >
+</div>
+
+<div class= "content">
+<!-------------------------------------------------------YMAP DESCRIPTION------------------------------------------------------------>
+
+<div>
+            <p>          
+            yMap map large yeast variants data to proteins features and post translational modifications.
+            <br>
+            <br>
+            <!--It can be used to analyze mutations that affect important functional regions and the secondary structural regions.
+            <br>
+            <br>
+            It can facilitate the interpretation of large-scale variant data and the correlation of genotype with phenotype.
+            -->
+            </p>
+</div>
+
+<!--------------------------------------------------------------FORM--------------------------------------------------------------------->
+<div >
+            
+            <!-- added from eni's tmeplate: action="get_file" method="post" enctype="multipart/form-data"-->
+            <form class = "input_form" action="get_file" method="post" enctype="multipart/form-data">
+                        
+                        <!--added from eni, guess is some protection stuff but no clue if she want me to use it-->
+                        {% csrf_token %}
+                        
+                        <!--champ input file -->
+                        <div class = "mendatory"> <!-- add inline if want to display optional field-->
+                                    
+                                    <header class="input_header ">
+                                                <p class="input_header font_header">ENTER YOUR INPUT FILE</p>
+                                    </header>
+                                    <div class = "input_background b_col2">         
+                                                  <!--champ MUST has a name if not they will not be sent-->
+                                                
+                                                <input class= "input_filename inline" type="text" id="input" name="user_input" placeholder="Upload local TEXT file" required= true>      
+                                                
+                                                <label class= "browse inline" for="browse_txt"> Browse </label>
+                                                
+                                    </div> 
+                                                <input type="file" class="input_file inline" name="browse.txt" id="browse_txt" accept=".txt">
+            
+                                    </div>
+                                              
+                                    <div class="centered">
+                                    <!--submit button-->
+                                    <input class = "input_submit" type="submit" value="Run yMap">
+                        </div>
+            </form>
+
+             <!--Django message added by eni-->
+            {% if uploaded_file_url %}
+            <p>File uploaded at: <a href="{{ uploaded_file_url }}">{{ uploaded_file_url }}</a></p>
+            {% endif %}
+            
+</div>
+</div>
+</body>
+</html>

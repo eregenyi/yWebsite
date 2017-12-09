@@ -1,4 +1,4 @@
-/*CSS ORGANISATION: FUN
+﻿/*CSS ORGANISATION: FUN
   F, flat hierarchy of selectors: it is recommended to use the classes to select items, avoid a cascade without the need, and do not use ids.
   U, utility styles: it is encouraged to create the service atomic styles for solving typical makeup tasks, for example, w100 for width: 100%; or fr for float: right;
   N, name-spaced components: Ben recommends to add namespaces for specifying the styles of specific modules elements. This approach will avoid overlapping in class names.
@@ -53,6 +53,19 @@ border-radius:  top-left, top-right,  bottom-right, a bottom-left corner
   letter-spacing: 4px;
 }
    
+.fs_medium{
+     font-size: 16px;
+}
+
+.fs_big{
+     font-size: 2em;
+}
+
+/*center element horizontally inside its container*/
+.centered{
+ text-align: center;
+}
+
 
 
 /*----------------------------------------------------RESPONSIVE WEB--------------------------------------------------*/
@@ -188,7 +201,7 @@ body{
     /*why is it not from left to rigth*/
     width: 100%;
     height: 15em;
-    background-image: url('Saccharomyces_cerevisiae.jpg');
+	background-image: url("images/Saccharomyces_cerevisiae.JPG");
     background-position: center;
     background-repeat: no-repeat;
     padding: 0; 
@@ -199,11 +212,14 @@ body{
 
 .content{ 
   margin: 0px 27px 0px 27px;
+  text-align: center;
 }
 
 .about_content{
  margin: 2em 27px 2em 20%;
  height: 100%;
+ line-height: 200%;
+
 }
 
 h1{
@@ -282,7 +298,6 @@ h2{
     width: 498px;
     text-align: center;
     padding: 17px 0px 0px 0px;
-    font-size: 2em;
     margin: 0 auto;
 }
 .contact_label {
@@ -315,14 +330,23 @@ h2{
 	height:213px;
 }
 
-.contact_submit{
- text-align: center; 
+/* anti spam fighter*/
+.contact_invisible{
+	height: 0px;
+	width: 0px;
 }
 
+/*--------------------------------------------------------------DOWNLOAD FORM  CSS--------------------------------------------------------*/
+
+.download_form{
+ padding: 2%;
+}
 
 /*--------------------------------------------------------------FORM COMMUN CSS--------------------------------------------------------*/
 
-input[type=submit], .browse{
+
+/*input, download and browse button*/
+input[type=submit], .browse, .download, input[type=submit]:hover{   /*why is hover here??*/
     color: white;
     padding: 14px 20px;
     margin: 8px 0;
@@ -332,6 +356,7 @@ input[type=submit], .browse{
     background-color:#558C89
 }
 
-input[type=submit]:hover, .browse:hover{
+/*change the color of the button when the cursor is on it*/
+input[type=submit]:hover, .browse:hover, .download:hover{
     background-color: #3B625F;
 }

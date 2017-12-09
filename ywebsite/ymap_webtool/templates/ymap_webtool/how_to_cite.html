@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Submitted</title>
+<title>How to cite</title>
 
 <!--encoding type-->
 <meta charset="UTF-8">
@@ -15,10 +15,6 @@
 
 <!--Bootstrap library-->
 <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-
-<!--script added from eni's template-->
-<script type="text/javascript" src=https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js>
-</script>
 </head>
 
 <body>
@@ -42,7 +38,7 @@
             <ul class="H_menu_ul">
                         <li id="menu_home" class ="H_menu_item inline"><a href={% url 'index' %}>Home</a></li>
                         <li id="menu_publication" class ="H_menu_item inline"><a href={% url 'publications' %}>Publications</a></li>
-                        <li id="menu_about" class ="H_menu_item inline"><a href={% url 'overview' %}>About</a></li>
+                        <li id="menu_about" class ="H_menu_item inline active"><a href="about/overview.html">About</a></li>
                         <li id="menu_troubleshooting" class ="H_menu_item inline"><a href={% url 'troubleshooting' %}>Troubleshooting</a></li>                        
                         <li id="menu_contact" class ="H_menu_item inline"><a href={% url 'contact' %}>Contact</a></li>
             </ul>     
@@ -54,29 +50,33 @@
 <div class = "yeast_picture" >
 </div>
 
-<div class= "content">
-    
-    <!--eni's part from template-->
-     <script>
-    window.onload = function () {
-        $.ajax({
-                url: '/ymap_webtool/processing',
-                type: "GET",
-                data: {},
-                success: function (data, textStatus, JQXHR) {
-				window.location.href = '/ymap_webtool/finished';
-				},
-                complete: function () { },
-                error: function () { 
-				window.location.href = '/ymap_webtool/submission_failed';
-				}
-        });
-    }
-    </script>
-    <p id="message">
-        Your job is submitted and being processed. please be patient
-    </p>
+<!--------------------------------------------------------------VERTICAL MENU--------------------------------------------------------------->
+       
+<div class= "V_menu b_col1">
+            <ul class="V_menu_ul b_col1">
+                        <li id="menu_overview" class ="V_menu_item "><a href={% url 'overview' %}>Overview</a></li>
+                        <li id="menu_process" class ="V_menu_item "><a href={% url 'process' %}>Process</a></li>
+                        <li id="menu_databases" class ="V_menu_item "><a href={% url 'databases' %}>Databases</a></li>
+                        <li id="menu_inputformat" class =" V_menu_item"><a href={% url 'input_format' %}>Input format</a></li>
+                        <li id="menu_results" class ="V_menu_item "><a href={% url 'results'%}>Results</a></li>
+                        <li id="menu_howtocite" class ="V_menu_item active"><a href={% url 'how_to_cite'%}>How to cite</a></li>
+            </ul>     
+</div>
+
+<!--------------------------------------------------------------CONTENT--------------------------------------------------------------->
+
+<div class= "about_content ">
+              
+            <p>
+            Please cite yMap as the following:
+            
+            <br>
+            <br>
+             
+            Ahmed Arslan and Vera van Noort, yMap: an automated method to map yeast variants to protein modifications and functional regions
+            <i>Bioinformatics</i> October 22, 2016 <a href="https://doi.org/10.1093/bioinformatics/btw658"> doi:10.1093/bioinformatics/btw658 </a>
+            
+            </p>
 </div>
 </body>
 </html>
-
