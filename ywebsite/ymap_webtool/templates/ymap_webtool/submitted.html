@@ -18,22 +18,22 @@
 <div class= "content">
     
     <!--eni's part from template-->
-     <script>
-    window.onload = function () {
-        $.ajax({
-                url: '/ymap_webtool/processing',
-                type: "GET",
-                data: {},
-                success: function (data, textStatus, JQXHR) {
-				window.location.href = '/ymap_webtool/finished';
-				},
-                complete: function () { },
-                error: function () { 
-				window.location.href = '/ymap_webtool/submission_failed';
+		 <script>
+			  window.onload = function () {
+					$.ajax({
+							url: '/ymap_webtool/processing',
+							type: "GET",
+							data: {},
+							success: function (data, textStatus, JQXHR) {
+							window.location.href = '/ymap_webtool/finished';
+							},
+							complete: function () { },
+							error: function () { 
+							window.location.href = '/ymap_webtool/submission_failed';
+							}
+					});
 				}
-        });
-    }
-    </script>
+		</script>
     <p id="message">
         Your job is submitted and being processed. please be patient
     </p>
