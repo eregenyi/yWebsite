@@ -1,7 +1,7 @@
 {% extends "ymap_webtool/base.html" %}
 
 <!--template inheritance: add page title-->
-{% block title %}Process{% endblock %}
+{% block title %}pipeline{% endblock %}
 
 <!--template inheritance: add the class "active in the block *_class corresponding to the current page -->
 {% block about_class %}active{% endblock %}">
@@ -15,7 +15,7 @@
 <div class= "V_menu b_col1">
             <ul class="V_menu_ul b_col1">
                         <li id="menu_overview" class ="V_menu_item "><a href={% url 'overview' %}>Overview</a></li>
-                        <li id="menu_process" class ="V_menu_item active"><a href={% url 'process' %}>Process</a></li>
+                        <li id="menu_pipeline" class ="V_menu_item active"><a href={% url 'pipeline' %}>pipeline</a></li>
                         <li id="menu_databases" class ="V_menu_item "><a href={% url 'databases' %}>Databases</a></li>
                         <li id="menu_inputformat" class =" V_menu_item"><a href="input_format.html">Input format</a></li>
                         <li id="menu_results" class ="V_menu_item "><a href={% url 'results'%}>Results</a></li>
