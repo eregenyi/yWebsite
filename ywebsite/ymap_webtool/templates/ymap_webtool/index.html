@@ -3,7 +3,7 @@
 <!--template inheritance: add page title-->
 {% block title %}Home{% endblock %}
 
-<!--template inheritance: add the class "active in the block *_class corresponding to the current page -->
+<!--template inheritance: add the class "active" in the block *_class corresponding to the current page -->
 {% block home_class %}active{% endblock %}">
 
 
@@ -28,40 +28,51 @@
 <!--------------------------------------------------------------FORM--------------------------------------------------------------------->
 <div >
             
-            <!-- added from eni's tmeplate: action="get_file" method="post" enctype="multipart/form-data"-->
+            
             <form class = "input_form" action="get_file" method="post" enctype="multipart/form-data">
+			<!-- 
+			action="get_file" : call to the view's function "get_file"
+			method="post" : method to send the data
+			enctype="multipart/form-data" :???
+			-->
+			
+			 <!--field MUST has a name if not they will not be sent + this name should be = to the name given in the action script-->                   
+                    
+                        {% csrf_token %}   <!--we do not know what it does-->
                         
-                        <!--added from eni, guess is some protection stuff but no clue if she want me to use it-->
-                        {% csrf_token %}
-                        
-                        <!--champ input file -->
                         <div class = "mendatory"> <!-- add inline if want to display optional field-->
                                     
                                     <header class="input_header ">
                                                 <p class="input_header font_header">ENTER YOUR INPUT FILE</p>
                                     </header>
-                                    <div class = "input_background b_col2">         
-                                                  <!--champ MUST has a name if not they will not be sent-->
+																	
+                                    <div class = "input_background b_col2">           
                                                 
-                                                <input class= "input_filename inline" type="text" id="input" name="user_input" placeholder="Upload local TEXT file" required= true>      
-                                                
-                                                <label class= "browse inline" for="browse_txt"> Browse </label>
+												<!--label of browse button-->   
+												<!--"for" refers to the id of the input it is associated-->  
+												<!--cliking on a label == clinking on the button-->  
+												<!--uncomment if you want to use the label as a stulable browse button !need to add class "input_invisible" to the input-->  
+                                                <!--"<label for="browse_txt" class= "browse inline">  Browse </label>-->
+												
+												
+												<!--input field-->	
+												<input type="file" accept=".txt" name="myfile" id="browse_txt" class="inline" >
                                                 
                                     </div> 
-                                                <input type="file" class="input_file inline" name="browse.txt" id="browse_txt" accept=".txt">
-            
-                                    </div>
-                                              
-                                    <div class="centered">
-                                    <!--submit button-->
-                                    <input class = "input_submit" type="submit" value="Run yMap">
+									
                         </div>
+                                    
+									<!--submit button-->									
+                                    <div class="centered">										
+										<input type="submit" class = "input_submit"  value="Run yMap">
+									</div>
             </form>
 
-             <!--Django message added by eni-->
+             <!--Django message added by eni
             {% if uploaded_file_url %}
             <p>File uploaded at: <a href="{{ uploaded_file_url }}">{{ uploaded_file_url }}</a></p>
             {% endif %}
+			-->
 </div>         
 </div>
 </div>

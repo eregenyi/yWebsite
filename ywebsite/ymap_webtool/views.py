@@ -171,8 +171,12 @@ else it redirects to the submission_fail page
 '''
 def get_file(request):
     clean_up(input_path, output_path, archive_path)
+	
+	#handle file upload
     if request.method == 'POST':
+		# create a form instance of the class UploadFileForm (cf form.py) and populate it with data from the request:
         form = UploadFileForm(request.POST, request.FILES)
+		# check if the extentionof the file is .txt (ps: this is already checked on the html)
         if validate_file_type(request.FILES['myfile'].name) is True:
             save_file(request.FILES['myfile'], input_path, input_file_name)
             logger.debug("get_file ran succcesfully")

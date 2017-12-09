@@ -237,19 +237,11 @@ h2{
    width:459px; /* change if want to display optionnal fields*/ 
 }
 .mendatory{
-    /*width: 48%; uncomment if want to display optionnal fields*/ 
     vertical-align:top;
     padding: 0 ;
-    /*wmargin: 0 1em 0 0; uncomment if want to display optionnal fields*/ 
     border-radius: 6px;
 }
 
-.optional{
-    width: 48%;   
-    vertical-align:top;
-    border-radius: 6px;
-    margin: 0 0 0 1em;
-}
 
 .input_header{
   padding: 1em;
@@ -257,18 +249,10 @@ h2{
   margin: 0 auto;
 }
 
-.form_opt_input{
-    right: 13px;
-    width: 100%;
-    padding: 12px 20px;
-    margin: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
 .input_background{
     border: 1px solid #ccc;
     border-radius: 4px;
+	padding: 2em;
 }
 .input_filename{
  margin: 1em 4em 1em 5em;
@@ -282,7 +266,8 @@ h2{
  font-size: 13px;
 }
 
-.input_file{
+/*add that to the class of an input type= file if you want to hide it in order to use its label as button*/
+.input_invisible{
     opacity: 0;
     background-color:#558C89!important
 }
