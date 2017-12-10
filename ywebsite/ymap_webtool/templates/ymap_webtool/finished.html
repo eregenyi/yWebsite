@@ -22,6 +22,10 @@
             <section class="body">
 			<!-- call the function download_result from view.py when the user click on the button-->
                         <form class="contact_form" method="get" action="download_result">
+						
+									<!-- django protection against Cross Site Request Forgery-->
+									{% csrf_token %} 
+									
                                     <div class= "centered">
                                                 <button class= download type="submit">Download</button>
                                     </div>
