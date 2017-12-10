@@ -3,14 +3,17 @@ from django.shortcuts import render
 from django.http import Http404
 from .forms import *
 from django.http import HttpResponseRedirect
-from .process_input import *
+from .tasks import *
 from shutil import make_archive
 from numba.pycc.decorators import process_input_files
 import logging
 import re
 from _overlapped import NULL
 import csv
+import os.path
+from pathlib import Path
 
+#ToDo: add "Server is busy" template
 
 wd = os.getcwd()
 input_path = os.path.join(wd, 'ymap_webtool', 'data', 'input')
@@ -22,8 +25,9 @@ archive_name = "results"
 download_name = "results.zip"
 gene_level_input_name = "mutated_proteins.txt"
 
+
 '''
-######################################### Setting up logger (For debugging in command line) ###################
+######################################### Setting up logger (For debugging in command line) ########################
 '''
 
 '''
@@ -53,12 +57,22 @@ else:
 
 def index(request):
     #specify the template to the Main page here. Django by default looks for templates in the templates folder
-    return render(request, 'ymap_webtool/index.html')
+    f = Path("running_job")
+    if not f.is_file():
+        logger.debug("No jobs are running currently (no job_running file)")
+        return render(request, 'ymap_webtool/index.html')
+    elif is_too_old(f, 15):
+        logger.debug("The program is stuck (too old job_running file)")
+        os.remove("running_job")
+        clean_up(input_path, output_path, archive_path)
+        return render(request, 'ymap_webtool/index.html')
+    else:
+        logger.debug("Another job is being processed. Come back later.")
+        return render(request, 'ymap_webtool/server_is_busy.html')
 
 def publications(request):
     #Specify the template to the Publications page
     return render(request, 'ymap_webtool/publications.html')
-
 
 def overview (request):
     #specify the template to the about/overview page here.
@@ -95,14 +109,13 @@ def contact(request):
 def finished(request):
     #Specify template to the page to display after submission
     logger.debug("time to give back the finished page with the script for downloading the results")
+    is_running = False
     return render(request, 'ymap_webtool/finished.html')
 
 def submission_fail(request):
     #Specify template to the page to display if submission fails
     #clean_up(input_path, output_path, archive_path)
     return render(request, 'ymap_webtool/submission_fail.html')
-
-
 
 def processing(request):
     '''
@@ -114,12 +127,12 @@ def processing(request):
     logger.debug("started processing the job")
     if is_protein(os.path.join(input_path, input_file_name)) is True:
         logger.debug("it was a protein input file. running yproteins now")       
-        #run_yproteins()
+        run_yproteins()
     elif is_gene(os.path.join(input_path, input_file_name)) is True:
         logger.debug("it was a gene input file. running ygenes now")
         os.rename(os.path.join(input_path, input_file_name), os.path.join(input_path, gene_level_input_name))
         logger.debug("now the file " + input_file_name + " is renamed to " + gene_level_input_name)
-        #run_ygenes()
+        run_ygenes()
         logger.debug("finished processing the job")
     else:
         logger.debug("ERROR! Neither gene nor protein file!")
@@ -131,9 +144,9 @@ def processing(request):
     # maybe keep the archive?
     return HttpResponseRedirect('finished')
 
-
 def submitted(request):
     logger.debug("the job should be submitted and passed to processing")
+    is_running = True
     return render(request, 'ymap_webtool/submitted.html')
 
 
@@ -145,52 +158,67 @@ def get_string(request):
     else it assignes an empty object to the form and redirects to the submission_fail page
     @param request
     '''
-    # if this is a POST request we need to process the form data
-    if request.method == 'POST':
-        # create a form instance and populate it with data from the request:
-        form = StringForm(request.POST)
-        # check whether it's valid:
-        if form.is_valid():
-            # process the data in form.cleaned_data as required
-            # redirect to a new URL:
-            save_string(form.cleaned_data.get('query'), input_path, input_file_name)
-            #Process data here with a separate pydev class?
-            return HttpResponseRedirect('submitted')
-
-    # if a GET (or any other method) we'll create a blank form
+    if is_running is False:
+        is_running = True
+        # if this is a POST request we need to process the form data
+        if request.method == 'POST':
+            # create a form instance and populate it with data from the request:
+            form = StringForm(request.POST)
+            # check whether it's valid:
+            if form.is_valid():
+                # process the data in form.cleaned_data as required
+                # redirect to a new URL:
+                save_string(form.cleaned_data.get('query'), input_path, input_file_name)
+                return HttpResponseRedirect('submitted')
+        # if the method was not POST we'll create a blank form
+        else:
+            form = StringForm()
+        return HttpResponseRedirect('submission_fail')
     else:
-        form = StringForm()
-    return HttpResponseRedirect('submission_fail')
+        return HttpResponseRedirect('submission_fail')
+    
+        
 
 
 def get_file(request):
     '''
     takes a file that has been uploaded with the HTML form, 
     validates its extension (only .txt is allowed!)
-    if the extension is fine, saves that file under the input_path specified above, and redirects to the processing page
+    if the extension is fine, saves that file under the     input_path specified above, and redirects to the processing page
     else it redirects to the submission_fail page
     @param request
     '''
-    #clean_up(input_path, output_path, archive_path)
-    #handle file upload
-    if request.method == 'POST':
-    # create a form instance of the class UploadFileForm (cf form.py) and populate it with data from the request:
-        form = UploadFileForm(request.POST, request.FILES)
-    # check if the extention of the file is .txt (ps: this is already checked on the html)
-        if validate_file_type(request.FILES['myfile'].name) is True:
-            save_file(request.FILES['myfile'], input_path, input_file_name)
-            logger.debug("get_file ran succcesfully")
-            return HttpResponseRedirect('submitted')
+    f = Path("running_job")
+    if not f.is_file():
+        f = open("running_job", "w+")
+        f.close()
+        clean_up(input_path, output_path, archive_path)
+        #handle file upload
+        if request.method == 'POST':
+        # create a form instance of the class UploadFileForm (cf form.py) and populate it with data from the request:
+            form = UploadFileForm(request.POST, request.FILES)
+        # check if the extention of the file is .txt (ps: this is already checked on the html)
+            if validate_file_type(request.FILES['myfile'].name) is True:
+                save_file(request.FILES['myfile'], input_path, input_file_name)
+                logger.debug("get_file ran succcesfully")
+                return HttpResponseRedirect('submitted')
+        else:
+            return HttpResponseRedirect('submission_fail')
     else:
-        return HttpResponseRedirect('submission_fail')
-    
+            return HttpResponseRedirect('submission_fail')
 
 def download_result(request):
+    '''
+    wraps the result zip file into an HttpResponse object and returns it
+    '''
     #download the results to the user
     resp_file = open(os.path.join(archive_path, archive_name + ".zip"), 'rb') #the rb flag is needed on windows!motherwise r should be sufficient
     response = HttpResponse(resp_file, content_type='application/force-download')
     response['Content-Disposition'] = 'attachment; filename="%s"' % download_name
     logger.debug("download the zip file")
+    f = Path("running_job")
+    if f.is_file() is True:
+        os.remove("running_job")
     return response    
 
 
