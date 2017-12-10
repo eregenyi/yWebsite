@@ -304,15 +304,13 @@ h2{
 /* Style the text boxes */
 .contact_input, .contact_textarea {
 	width:439px;
-	background:#efefef;
+	background:#efefef !important;
 	border:1px solid #dedede;
 	padding:10px;
 	margin-top:3px;
 	font-size:0.9em;
-	color:#3a3a3a;
-  -moz-border-radius:5px;
-  -webkit-border-radius:5px;
-  border-radius:5px;
+	color:#3a3a3a ;
+ border-radius:5px;
 }
 
 .contact_textarea {

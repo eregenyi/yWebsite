@@ -1,26 +1,17 @@
-{% extends "ymap_webtool/base.html" %}
-
-<!--template inheritance: add page title-->
-{% block title %}Download results{% endblock %}
-
-<!--template inheritance: in case something else is needed in the head-->
-{% block head %}{% endblock %}
-
-<!--template inheritance: add the class "active in the block *_class corresponding to the current page -->
-{% block download_class %}active{% endblock %}">
-
 <!--template inheritance: add content -->
+<!-- this is only one block, because the submitted page calls for it and appends its content with it-->
+
 {% block content %}
 
 <!--------------------------------------------------------------DOWNLOAD  FORM--------------------------------------------------------------->
     
 <div class = "download_form">
             <header class="body">
-                        <p class="contact_header font_header fs_medium">Your submition has finished, click on the button below to download the results</p>
+                        <p class="contact_header font_header fs_medium">Your job is finished, click on the button below to download the results</p>
             </header>
             
             <section class="body">
-			<!-- call the function download_result from view.py when the user click on the button-->
+			<!-- call the function download_result from view.py upon button click -->
                         <form class="contact_form" method="get" action="download_result">
 						
 									<!-- django protection against Cross Site Request Forgery-->

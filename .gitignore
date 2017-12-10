@@ -1,6 +1,8 @@
 ywebsite/ymap_webtool/data/ymap_data/*
 ywebsite/ymap_webtool/data/input/*
 ywebsite/ymap_webtool/data/output/*
+ywebsite/ymap_webtool/data/archive/*
 ywebsite/ymap_webtool/__pycache__/*
 ywebsite/ywebsite/__pycache__/*
+ywebsite/ymap_webtool/migrations/*
 

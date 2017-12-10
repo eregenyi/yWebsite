@@ -5,6 +5,7 @@
 
 <!--template inheritance: in case something else is needed in the head-->
 {% block head %}
+
 <!--script added from eni's template-->
 <script type="text/javascript" src=https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js>
 </script>
@@ -16,26 +17,34 @@
 <!--template inheritance: add content -->
 {% block content %}
 <div class= "content">
-    
-    <!--eni's part from template-->
-     <script>
-    window.onload = function () {
-        $.ajax({
-                url: '/ymap_webtool/processing',
-                type: "GET",
-                data: {},
-                success: function (data, textStatus, JQXHR) {
-				window.location.href = '/ymap_webtool/finished';
-				},
-                complete: function () { },
-                error: function () { 
-				window.location.href = '/ymap_webtool/submission_failed';
+    	
+    <!-- this ajax call will replace the paragraph with id="message" with the content of parameter data -->
+	<!-- @param data - html response from the server -->
+		<script>
+			console.log("ajax előtt")
+				window.onload = function () {
+					$.ajax({
+						url: '/ymap_webtool/processing',
+						type: "GET",
+						data: {},
+						success: function (data, textStatus, JQXHR) { 
+							console.log(data);
+							console.log(textStatus);
+							console.log(JQXHR);
+							$("#message").html(data); //replace "message" with the finished page
+						},
+						complete: function () { },
+						error: function () { 
+							$("#message").html(data); //replace "message" with the error page
+						}
+					});
 				}
-        });
-    }
-    </script>
+			alert("read the console")
+			console.log("ajax után")
+		</script>
+							
     <p id="message">
-        Your job is submitted and being processed. please be patient
+        Your job is submitted and being processed. Please be patient.
     </p>
 </div>
 {% endblock %}

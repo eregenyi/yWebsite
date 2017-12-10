@@ -23,14 +23,40 @@ class ContactForm(forms.Form):
 	'''
 	This class is for the contact form @test
 	'''
+	name = forms.CharField(
+		max_length = 30,
+		widget=forms.TextInput(
+			attrs={
+				'placeholder': 'Write your name here'  
+			}
+		)				
+	)
+				   
+	from_email = forms.EmailField(
+		max_length= 50,
+		widget=forms.EmailInput(
+			attrs={
+				'placeholder': 'Write your email here'  
+			}
+		)				
+	)
 	
-	name = forms.CharField(max_length = 30)
-	email = forms.EmailField(max_length= 50)
-	subject = forms.CharField(max_length = 50)
+	subject = forms.CharField(
+		max_length = 50,
+		widget=forms.TextInput(
+			attrs={
+				'placeholder': 'Write the subject of your message here'  
+			}
+		)									  					  
+	)
+	
 	message = forms.CharField(
 		max_length=2000,
-		widget=forms.Textarea(),
-		help_text='Write here your message!'
+		widget=forms.Textarea(
+			attrs={
+				'placeholder': 'Write your message here'  
+			}	
+		)
 	)
 	
 def clean(self):
@@ -39,7 +65,7 @@ def clean(self):
 	'''
 	cleaned_data = super(ContactForm, self).clean()
 	name = cleaned_data.get('name')
-	email = cleaned_data.get('email')
+	from_email = cleaned_data.get('from_email')
 	subject = cleaned_data.get('subject')
 	message = cleaned_data.get('message')
 	if not name and not email and not subject and not message:

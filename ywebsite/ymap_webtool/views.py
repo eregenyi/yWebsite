@@ -13,7 +13,8 @@ import csv
 from django.core.mail import send_mail , BadHeaderError  # import to send an email @test
 from django.shortcuts import render_to_response # import to send an email @test
 from django.template import RequestContext, Context # import to send an email @test
-
+from django.template.loader import get_template # import to send an email @test
+from django.core.mail.message import EmailMessage 
 wd = os.getcwd()
 input_path = os.path.join(wd, 'ymap_webtool', 'data', 'input')
 output_path = os.path.join(wd, 'ymap_webtool', 'data', 'output')
@@ -24,6 +25,7 @@ archive_name = "results"
 download_name = "results.zip"
 gene_level_input_name = "mutated_proteins.txt"
 i = 0
+
 
 '''
 ######################################### Setting up logger (For debugging in command line) ###################
@@ -60,7 +62,6 @@ def index(request):
 def publications(request):
 	# Specify the template to the Publications page
 	return render(request, 'ymap_webtool/publications.html')
-
 
 def overview (request):
 	# specify the template to the about/overview page here.
@@ -107,10 +108,10 @@ def finished(request):
 	return render(request, 'ymap_webtool/finished.html')
 
 def submission_fail(request):
-	# Specify template to the page to display if submission fails
+	#Specify template to the page to display if submission fails
+	#clean_up(input_path, output_path, archive_path)
 	return render(request, 'ymap_webtool/submission_fail.html')
-
-
+	
 '''
 Checks whether the input file contains protein or gene level mutations, and runs a ymap function accordingly to map.
 zips the results
@@ -118,6 +119,7 @@ deletes the original results, keeps only the zip file ?
 @return redirects to ymap_webtool/finished.
 '''
 def processing(request):
+
 	logger.debug("started processing the job")
 	if is_protein(os.path.join(input_path, input_file_name)) is True:
 		logger.debug("it was a protein input file. running yproteins now")
@@ -142,6 +144,7 @@ def processing(request):
 def submitted(request):
 	logger.debug("the job should be submitted and passed to processing")
 	return render(request, 'ymap_webtool/submitted.html')
+
 
 
 '''
@@ -213,11 +216,46 @@ def send_email(request):
 	logger.debug(request)
 	
 	if request.method == 'POST':
-		form = ContactForm(request.POST)
-
+		form = ContactForm(data=request.POST)
+		logger.debug(form)
 		if form.is_valid():
 			logger.debug("contact form: is valid = true")
-			pass
+			
+			#store the information from the form into variable
+			name = request.POST.get('name', '')
+			from_email = request.POST.get('from_email', '')
+			subject = request.POST.get('subject', '')
+			message = request.POST.get('message', '')
+			
+			logger.debug("form input in variables")
+			
+			#use these variable to fill the email template
+			template = get_template('ymap_webtool/_email_template.txt')
+			
+			context = {
+				'name': name,
+				'from_email': from_email,
+				'subject': subject,
+				'message': message,
+			}
+			
+			content = template.render(context)
+			logger.debug("content ready")
+		
+			
+			#create an email from content (=filled template)
+			new_email = EmailMessage(
+				"New contact form submission",
+				content,
+				"yMap web" +'',
+				['paquayleila@hotmail.com'],
+				headers = {'Reply-To': from_email }
+			)
+			logger.debug("email ready")
+			
+			#send email
+			new_email.send()
+
 	else:
 		form = ContactForm()		
 	return render(request, "ymap_webtool/email_sent.html", {'form': form})
@@ -302,3 +340,5 @@ class AjaxRedirect(object):
 			if type(response) == HttpResponseRedirect:
 				response.status_code = 278
 		return response
+
+   
