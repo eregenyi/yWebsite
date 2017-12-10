@@ -121,3 +121,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+
+# set the server to send the email during production. Here the default one:STMP
+# uncomment for production
+#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# set the server to send the email during developpement. Here the default one:STMP
+# the email will appear on the console instead of being send to the specified email adress
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

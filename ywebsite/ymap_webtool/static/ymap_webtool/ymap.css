@@ -66,7 +66,10 @@ border-radius:  top-left, top-right,  bottom-right, a bottom-left corner
  text-align: center;
 }
 
-
+/*center message in the middle of the content area*/
+.message_centered{
+ padding: 2em;
+}
 
 /*----------------------------------------------------RESPONSIVE WEB--------------------------------------------------*/
    /* deal with the size of compartiment that are inside an other compartiment */
@@ -172,6 +175,7 @@ body{
 
 /* -------------------------------------------------------COMMMUN CSS MENU----------------------------------------------------------*/
 
+/*list of the menu*/
 .H_menu_ul, .V_menu_ul{
     padding: 0em 13px 0em 13px;
     margin: 0;
@@ -327,11 +331,17 @@ h2{
  padding: 2%;
 }
 
-/*--------------------------------------------------------------FORM COMMUN CSS--------------------------------------------------------*/
+/*----------------------------------------------------------BUTTON WITH A LINK CSS--------------------------------------------------------*/
 
+.button{
+    text-decoration: none;
+    margin: 2em!important; 
+}
+/*--------------------------------------------------------------FORM COMMUN CSS--------------------------------------------------------*/
+ 
 
 /*input, download and browse button*/
-input[type=submit], .browse, .download, input[type=submit]:hover{   /*why is hover here??*/
+input[type=submit], .browse, .download, input[type=submit]:hover, .button{   /*why is hover here??*/
     color: white;
     padding: 14px 20px;
     margin: 8px 0;
@@ -342,6 +352,6 @@ input[type=submit], .browse, .download, input[type=submit]:hover{   /*why is hov
 }
 
 /*change the color of the button when the cursor is on it*/
-input[type=submit]:hover, .browse:hover, .download:hover{
+input[type=submit]:hover, .browse:hover, .download:hover, .button:hover{
     background-color: #3B625F;
 }

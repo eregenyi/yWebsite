@@ -1,0 +1,26 @@
+{% extends "ymap_webtool/base.html" %}
+
+<!--template inheritance: add page title-->
+{% block title %}Contact{% endblock %}
+
+<!--template inheritance: add the class "active" in the block *_class corresponding to the current page -->
+{% block contact_class %}{% endblock %}">
+
+
+<!--template inheritance: add content -->
+{% block content %}
+<div class= "content">
+
+    <div class = "message_centered">
+        <p>We received your message and will get back to you.</p>
+        
+        <!-- breking point to separate the message from the button-->
+        <br>
+        <br>
+        <br>
+        
+        <!--button to go back to home page -->
+        <a class="button" href={% url 'index' %}>Go back to home page</a>
+    </div>
+</div>
+{% endblock %}
