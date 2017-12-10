@@ -65,11 +65,18 @@ def overview (request):
     #specify the template to the about/overview page here.
     return render(request, 'ymap_webtool/overview.html')
 
+<<<<<<< HEAD
 def process (request):
     #specify the template to the about/process page here.
     logger.debug("hello from process")
     return render(request, 'ymap_webtool/process.html')
     
+=======
+def pipeline (request):
+    #specify the template to the about/pipeline page here.
+    return render(request, 'ymap_webtool/pipeline.html')
+
+>>>>>>> 919ac5b84e3308fadf0d6ade22e99a1dadb070cf
 def databases (request):
     #specify the template to the about/databases page here.
     return render(request, 'ymap_webtool/databases.html')
@@ -171,12 +178,11 @@ else it redirects to the submission_fail page
 '''
 def get_file(request):
     clean_up(input_path, output_path, archive_path)
-	
-	#handle file upload
+#handle file upload
     if request.method == 'POST':
-		# create a form instance of the class UploadFileForm (cf form.py) and populate it with data from the request:
+    # create a form instance of the class UploadFileForm (cf form.py) and populate it with data from the request:
         form = UploadFileForm(request.POST, request.FILES)
-		# check if the extention of the file is .txt (ps: this is already checked on the html)
+    # check if the extention of the file is .txt (ps: this is already checked on the html)
         if validate_file_type(request.FILES['myfile'].name) is True:
             save_file(request.FILES['myfile'], input_path, input_file_name)
             logger.debug("get_file ran succcesfully")

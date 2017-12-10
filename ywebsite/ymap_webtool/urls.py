@@ -2,11 +2,17 @@ from django.conf.urls import url
 from . import views
 
 # define URL patterns, link them to the corresponding views, and name those URLs
+#!r' mean regex expression so avoid name that are subset of an other
+#ex: avoi process and processing
 urlpatterns = [
     url(r'index', views.index, name='index'),
     url(r'publications', views.publications, name='publications'),
     url(r'overview', views.overview , name='overview'),
+<<<<<<< HEAD
     #url(r'process', views.process , name='process'),
+=======
+    url(r'pipeline', views.pipeline , name='pipeline'),
+>>>>>>> 919ac5b84e3308fadf0d6ade22e99a1dadb070cf
     url(r'databases', views.databases , name='databases'),
     url(r'input_format', views.input_format , name='input_format'),
     url(r'results', views.results , name='results'),
