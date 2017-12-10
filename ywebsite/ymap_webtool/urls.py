@@ -3,7 +3,7 @@ from . import views
 
 # define URL patterns, link them to the corresponding views, and name those URLs
 #!r' mean regex expression so avoid name that are subset of an other
-#ex: avoi process and processing
+#ex: avoid "process" and "processing"
 urlpatterns = [
     url(r'index', views.index, name='index'),
     url(r'publications', views.publications, name='publications'),
@@ -15,6 +15,8 @@ urlpatterns = [
     url(r'how_to_cite', views.how_to_cite, name='how_to_cite'),
     url(r'troubleshooting', views.troubleshooting, name='troubleshooting'),
     url(r'contact', views.contact, name='contact'),
+    url(r'send_email', views.send_email, name='send_email'), #to send email @test
+    url(r'email_sent', views.email_sent, name='email_sent'), #to send email @test
     url(r'finished', views.finished, name='finished'),
     url(r'submission_fail', views.submission_fail, name='submission_fail'),
     url(r'get_string', views.get_string, name='get_string'),
