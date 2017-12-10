@@ -16,16 +16,17 @@
 <!--template inheritance: add content -->
 {% block content %}
 <div class= "content">
-    
+    	
     <!--eni's part from template-->
 		 <script>
+		 console.log("ajax előtt")
 			  window.onload = function () {
 					$.ajax({
 							url: '/ymap_webtool/processing',
 							type: "GET",
 							data: {},
 							success: function (data, textStatus, JQXHR) {
-							window.location.href = '/ymap_webtool/finished';
+							/*window.location.href = '/ymap_webtool/finished';*/
 							},
 							complete: function () { },
 							error: function () { 
@@ -33,7 +34,9 @@
 							}
 					});
 				}
+		console.log("ajax után")
 		</script>
+							
     <p id="message">
         Your job is submitted and being processed. please be patient
     </p>

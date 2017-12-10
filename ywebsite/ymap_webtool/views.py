@@ -67,8 +67,9 @@ def overview (request):
 
 def process (request):
     #specify the template to the about/process page here.
+    logger.debug("hello from process")
     return render(request, 'ymap_webtool/process.html')
-
+    
 def databases (request):
     #specify the template to the about/databases page here.
     return render(request, 'ymap_webtool/databases.html')
@@ -92,7 +93,6 @@ def troubleshooting(request):
 def contact(request):
     #specify the template to the about/contact page here
     return render(request, 'ymap_webtool/contact.html')
-
 
 def finished(request):
     #Specify template to the page to display after submission
