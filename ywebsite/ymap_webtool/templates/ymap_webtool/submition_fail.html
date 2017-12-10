@@ -1,22 +1,8 @@
-{% extends "ymap_webtool/base.html" %}
-
-<!--template inheritance: add page title-->
-{% block title %}Submission fail{% endblock %}
-
-<!--template inheritance: in case something else is needed in the head-->
-{% block head %}
-	<!--script added from eni's template-->
-	<script type="text/javascript" src=https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js></script>
-{% endblock %}
-
-<!--template inheritance: add the class "active in the block *_class corresponding to the current page -->
-{% block home_class %}active{% endblock %}">
-
 <!--template inheritance: add content -->
+<!-- this is only one block, because the submitted page calls for it and appends its content with it-->
 {% block content %}
  
 <div class= "content">
-    
     <p id="message">
         Sorry, your submission has failed. Try again.
     </p>

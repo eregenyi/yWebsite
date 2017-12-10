@@ -21,7 +21,6 @@ output_file_name = "results.zip"
 archive_name = "results"
 download_name = "results.zip"
 gene_level_input_name = "mutated_proteins.txt"
-i = 0 
 
 '''
 ######################################### Setting up logger (For debugging in command line) ###################
@@ -64,19 +63,11 @@ def publications(request):
 def overview (request):
     #specify the template to the about/overview page here.
     return render(request, 'ymap_webtool/overview.html')
-
-<<<<<<< HEAD
-def process (request):
-    #specify the template to the about/process page here.
-    logger.debug("hello from process")
-    return render(request, 'ymap_webtool/process.html')
-    
-=======
+   
 def pipeline (request):
     #specify the template to the about/pipeline page here.
     return render(request, 'ymap_webtool/pipeline.html')
 
->>>>>>> 919ac5b84e3308fadf0d6ade22e99a1dadb070cf
 def databases (request):
     #specify the template to the about/databases page here.
     return render(request, 'ymap_webtool/databases.html')
@@ -108,25 +99,27 @@ def finished(request):
 
 def submission_fail(request):
     #Specify template to the page to display if submission fails
+    #clean_up(input_path, output_path, archive_path)
     return render(request, 'ymap_webtool/submission_fail.html')
 
 
-'''
-Checks whether the input file contains protein or gene level mutations, and runs a ymap function accordingly to map.
-zips the results
-deletes the original results, keeps only the zip file ?
-@return redirects to ymap_webtool/finished.
-'''
+
 def processing(request):
+    '''
+    Checks whether the input file contains protein or gene level mutations, and runs a ymap function accordingly to map.
+    zips the results
+    deletes the original results, keeps only the zip file ?
+    @return redirects to ymap_webtool/finished.
+    '''
     logger.debug("started processing the job")
     if is_protein(os.path.join(input_path, input_file_name)) is True:
         logger.debug("it was a protein input file. running yproteins now")       
-        run_yproteins()
+        #run_yproteins()
     elif is_gene(os.path.join(input_path, input_file_name)) is True:
         logger.debug("it was a gene input file. running ygenes now")
         os.rename(os.path.join(input_path, input_file_name), os.path.join(input_path, gene_level_input_name))
         logger.debug("now the file " + input_file_name + " is renamed to " + gene_level_input_name)
-        run_ygenes()
+        #run_ygenes()
         logger.debug("finished processing the job")
     else:
         logger.debug("ERROR! Neither gene nor protein file!")
@@ -144,14 +137,14 @@ def submitted(request):
     return render(request, 'ymap_webtool/submitted.html')
 
 
-'''
-takes a string entered through the HTML form, 
-validates the form
-if the for is valid, saves it into a text file and redirects to the processing page
-else it assignes an empty object to the form and redirects to the submission_fail page
-@param request
-'''
 def get_string(request):
+    '''
+    takes a string entered through the HTML form, 
+    validates the form
+    if the for is valid, saves it into a text file and redirects to the processing page
+    else it assignes an empty object to the form and redirects to the submission_fail page
+    @param request
+    '''
     # if this is a POST request we need to process the form data
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
@@ -169,16 +162,17 @@ def get_string(request):
         form = StringForm()
     return HttpResponseRedirect('submission_fail')
 
-'''
-takes a file that has been uploaded with the HTML form, 
-validates its extension (only .txt is allowed!)
-if the extension is fine, saves that file under the input_path specified above, and redirects to the processing page
-else it redirects to the submission_fail page
-@param request
-'''
+
 def get_file(request):
-    clean_up(input_path, output_path, archive_path)
-#handle file upload
+    '''
+    takes a file that has been uploaded with the HTML form, 
+    validates its extension (only .txt is allowed!)
+    if the extension is fine, saves that file under the input_path specified above, and redirects to the processing page
+    else it redirects to the submission_fail page
+    @param request
+    '''
+    #clean_up(input_path, output_path, archive_path)
+    #handle file upload
     if request.method == 'POST':
     # create a form instance of the class UploadFileForm (cf form.py) and populate it with data from the request:
         form = UploadFileForm(request.POST, request.FILES)
@@ -207,76 +201,11 @@ def test_page(request):
     logger.debug("Print this to the command line please")
     response = HttpResponse('Nothing to test now') 
     return response
-
-'''
-######################################### Functions ###################################
-'''
-
-'''
-Checks if the file's extension is .txt.
-Warning! This extension check may not be sufficient.
-If you want to perform more thorough file format checks, try magic, django-clamav-upload
-'''
-
-def validate_file_type(title):
-    return bool(re.match('.+\.txt$', title))
-
-
-'''
-This function returns true if the tab delimited file has 2 columns
-@param file: should be given as: path + filename + extension. file to analyse.
-'''    
-
-def is_protein(file):
-    num_cols = 0
-    with open(file) as f:
-        reader = csv.reader(f, delimiter='\t', skipinitialspace=True)
-        first_row = next(reader)
-        num_cols = len(first_row)
-    logger.debug("number of columns in the uploaded file: " + str(num_cols))
-    return bool(num_cols is 2)
-
-'''
-This function returns true if the tab delimited file has 5 columns
-@param file: should be given as: path + filename + extension. file to analyse.
-'''
-    
-def is_gene(file):
-    num_cols = 0
-    with open(file) as f:
-        reader = csv.reader(f, delimiter='\t', skipinitialspace=True)
-        first_row = next(reader)
-        num_cols = len(first_row)
-    logger.debug("number of columns in the uploaded file: " + str(num_cols))
-    return bool(num_cols is 5)
-
-
-'''
-This function erases all files and all folders (recursively) from a given path
-@param path: folder to wipe clean
-'''
-def wipe_folder(path):
-    folder = path
-    for the_file in os.listdir(folder):
-        file_path = os.path.join(folder, the_file)
-        try:
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path): shutil.rmtree(file_path)
-        except Exception as e:
-            print(e)
-
-def clean_up(input_path, output_path, archive_path):
-    input_path = input_path
-    output_path = output_path
-    archive_path = archive_path
-    #erase the input, output, but keep the archive under another name
-    wipe_folder(input_path)
-    wipe_folder(output_path)
-    logger.debug("hello from cleanup")
-    #os.rename(os.path.join(archive_path, archive_name + ".zip"), os.path.join(archive_path, "archived" + str(i) + ".zip"))
-            
-class AjaxRedirect(object):
+       
+class AjaxRedirect(object): 
+    '''
+    function defined for ajax calls
+    '''     
     def process_response(self, request, response):
         if request.is_ajax():
             if type(response) == HttpResponseRedirect:
