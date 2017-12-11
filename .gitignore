@@ -6,3 +6,5 @@ ywebsite/ymap_webtool/__pycache__/*
 ywebsite/ywebsite/__pycache__/*
 ywebsite/ymap_webtool/migrations/*
 
+.project
+.pydevproject
