@@ -60,32 +60,23 @@ else:
 '''
 
 def index(request):
-<<<<<<< HEAD
-    #specify the template to the Main page here. Django by default looks for templates in the templates folder
-    f = Path("running_job")
-    if not f.is_file():
-        logger.debug("No jobs are running currently (no job_running file)")
-        return render(request, 'ymap_webtool/index.html')
-    elif is_too_old(f, 15):
-        logger.debug("The program is stuck (too old job_running file)")
-        os.remove("running_job")
-        clean_up(input_path, output_path, archive_path)
-        return render(request, 'ymap_webtool/index.html')
-    else:
-        logger.debug("Another job is being processed. Come back later.")
-        return render(request, 'ymap_webtool/server_is_busy.html')
+	#specify the template to the Main page here. Django by default looks for templates in the templates folder
+	f = Path("running_job")
+	if not f.is_file():
+		logger.debug("No jobs are running currently (no job_running file)")
+		return render(request, 'ymap_webtool/index.html')
+	elif is_too_old(f, 15):
+		logger.debug("The program is stuck (too old job_running file)")
+		os.remove("running_job")
+		clean_up(input_path, output_path, archive_path)
+		return render(request, 'ymap_webtool/index.html')
+	else:
+		logger.debug("Another job is being processed. Come back later.")
+		return render(request, 'ymap_webtool/server_is_busy.html')
 
 def publications(request):
-    #Specify the template to the Publications page
-    return render(request, 'ymap_webtool/publications.html')
-=======
-	# specify the template to the Main page here. Django by default looks for templates in the templates folder
-	return render(request, 'ymap_webtool/index.html')
-
-def publications(request):
-	# Specify the template to the Publications page
+   	#Specify the template to the Publications page
 	return render(request, 'ymap_webtool/publications.html')
->>>>>>> 5316802b43aa5a59ce172376e2f492e745b65d89
 
 def overview (request):
 	# specify the template to the about/overview page here.
@@ -127,7 +118,6 @@ def email_sent(request):
 	return render(request, 'ymap_webtool/contemail_sentact.html')
 
 def finished(request):
-<<<<<<< HEAD
 	#Specify template to the page to display after submission
 	logger.debug("time to give back the finished page with the script for downloading the results")
 	is_running = False
@@ -147,7 +137,7 @@ def processing(request):
 	'''
 	logger.debug("started processing the job")
 	if is_protein(os.path.join(input_path, input_file_name)) is True:
-		logger.debug("it was a protein input file. running yproteins now")       
+		logger.debug("it was a protein input file. running yproteins now")	   
 		run_yproteins()
 	elif is_gene(os.path.join(input_path, input_file_name)) is True:
 		logger.debug("it was a gene input file. running ygenes now")
@@ -158,53 +148,14 @@ def processing(request):
 	else:
 		logger.debug("ERROR! Neither gene nor protein file!")
 		return HttpResponseRedirect('submission_fail')
-    
+	
 	make_archive(os.path.join(archive_path, archive_name), 'zip', root_dir = output_path)
 	logger.debug("made an archive")
 	# wipe original results folder
 	# maybe keep the archive?
 	return HttpResponseRedirect('finished')
-=======
-	# Specify template to the page to display after submission
-	logger.debug("time to give back the finished page with the script for downloading the results")
-	return render(request, 'ymap_webtool/finished.html')
-
-def submission_fail(request):
-	#Specify template to the page to display if submission fails
-	#clean_up(input_path, output_path, archive_path)
-	return render(request, 'ymap_webtool/submission_fail.html')
-	
-'''
-Checks whether the input file contains protein or gene level mutations, and runs a ymap function accordingly to map.
-zips the results
-deletes the original results, keeps only the zip file ?
-@return redirects to ymap_webtool/finished.
-'''
-def processing(request):
-
-	logger.debug("started processing the job")
-	if is_protein(os.path.join(input_path, input_file_name)) is True:
-		logger.debug("it was a protein input file. running yproteins now")
-		run_yproteins()
-	elif is_gene(os.path.join(input_path, input_file_name)) is True:
-		logger.debug("it was a gene input file. running ygenes now")
-		os.rename(os.path.join(input_path, input_file_name), os.path.join(input_path, gene_level_input_name))
-		logger.debug("now the file " + input_file_name + " is renamed to " + gene_level_input_name)
-		run_ygenes()
-		logger.debug("finished processing the job")
-	else:
-		logger.debug("ERROR! Neither gene nor protein file!")
-		return HttpResponseRedirect('submission_fail')
-
-	make_archive(os.path.join(archive_path, archive_name), 'zip', root_dir=output_path)
-	logger.debug("made an archive")
-	# wipe original results folder
-	# maybe keep the archive?
-	return HttpResponseRedirect('finished')
->>>>>>> 5316802b43aa5a59ce172376e2f492e745b65d89
 
 def submitted(request):
-<<<<<<< HEAD
 	logger.debug("the job should be submitted and passed to processing")
 	is_running = True
 	return render(request, 'ymap_webtool/submitted.html')
@@ -237,21 +188,16 @@ def get_string(request):
 	else:
 		return HttpResponseRedirect('submission_fail')
  
-=======
-	logger.debug("the job should be submitted and passed to processing")
-	return render(request, 'ymap_webtool/submitted.html')
 
 
->>>>>>> 5316802b43aa5a59ce172376e2f492e745b65d89
-
-'''
-takes a string entered through the HTML form,
-validates the form
-if the for is valid, saves it into a text file and redirects to the processing page
-else it assignes an empty object to the form and redirects to the submission_fail page
-@param request
-'''
 def get_string(request):
+	'''
+	takes a string entered through the HTML form,
+	validates the form
+	if the for is valid, saves it into a text file and redirects to the processing page
+	else it assignes an empty object to the form and redirects to the submission_fail page
+	@param request
+	'''
 	# if this is a POST request we need to process the form data
 	if request.method == 'POST':
 		# create a form instance and populate it with data from the request:
@@ -269,19 +215,12 @@ def get_string(request):
 		form = StringForm()
 	return HttpResponseRedirect('submission_fail')
 
-'''
-takes a file that has been uploaded with the HTML form,
-validates its extension (only .txt is allowed!)
-if the extension is fine, saves that file under the input_path specified above, and redirects to the processing page
-else it redirects to the submission_fail page
-@param request
-'''
+
 def get_file(request):
-<<<<<<< HEAD
 	'''
 	takes a file that has been uploaded with the HTML form, 
 	validates its extension (only .txt is allowed!)
-	if the extension is fine, saves that file under the     input_path specified above, and redirects to the processing page
+	if the extension is fine, saves that file under the	 input_path specified above, and redirects to the processing page
 	else it redirects to the submission_fail page
 	@param request
 	'''
@@ -292,9 +231,9 @@ def get_file(request):
 		clean_up(input_path, output_path, archive_path)
 		#handle file upload
 		if request.method == 'POST':
-		# create a form instance of the class UploadFileForm (cf form.py) and populate it with data from the request:
+			# create a form instance of the class UploadFileForm (cf form.py) and populate it with data from the request:
 			form = UploadFileForm(request.POST, request.FILES)
-		# check if the extention of the file is .txt (ps: this is already checked on the html)
+			# check if the extention of the file is .txt (ps: this is already checked on the html)
 			if validate_file_type(request.FILES['myfile'].name) is True:
 				save_file(request.FILES['myfile'], input_path, input_file_name)
 				logger.debug("get_file ran succcesfully")
@@ -305,41 +244,18 @@ def get_file(request):
 		return HttpResponseRedirect('submission_fail')
 
 def download_result(request):
-    '''
-    wraps the result zip file into an HttpResponse object and returns it
-    '''
-    #download the results to the user
-    resp_file = open(os.path.join(archive_path, archive_name + ".zip"), 'rb') #the rb flag is needed on windows!motherwise r should be sufficient
-    response = HttpResponse(resp_file, content_type='application/force-download')
-    response['Content-Disposition'] = 'attachment; filename="%s"' % download_name
-    logger.debug("download the zip file")
-    f = Path("running_job")
-    if f.is_file() is True:
-        os.remove("running_job")
-    return response    
-=======
-	clean_up(input_path, output_path, archive_path)
-# handle file upload
-	if request.method == 'POST':
-	# create a form instance of the class UploadFileForm (cf form.py) and populate it with data from the request:
-		form = UploadFileForm(request.POST, request.FILES)
-	# check if the extention of the file is .txt (ps: this is already checked on the html)
-		if validate_file_type(request.FILES['myfile'].name) is True:
-			save_file(request.FILES['myfile'], input_path, input_file_name)
-			logger.debug("get_file ran succcesfully")
-			return HttpResponseRedirect('submitted')
-	else:
-		return HttpResponseRedirect('submission_fail')
-
-
-def download_result(request):
-	# download the results to the user
-	resp_file = open(os.path.join(archive_path, archive_name + ".zip"), 'rb')  # the rb flag is needed on windows!motherwise r should be sufficient
+	'''
+	wraps the result zip file into an HttpResponse object and returns it
+	'''
+	#download the results to the user
+	resp_file = open(os.path.join(archive_path, archive_name + ".zip"), 'rb') #the rb flag is needed on windows!motherwise r should be sufficient
 	response = HttpResponse(resp_file, content_type='application/force-download')
 	response['Content-Disposition'] = 'attachment; filename="%s"' % download_name
 	logger.debug("download the zip file")
-	return response
->>>>>>> 5316802b43aa5a59ce172376e2f492e745b65d89
+	f = Path("running_job")
+	if f.is_file() is True:
+		os.remove("running_job")
+	return response	
 
 
 def test_page(request):
@@ -352,6 +268,9 @@ def test_page(request):
 
 #to send email @test
 def send_email(request):
+	'''
+	This method handles the input form and sends an e-mail
+	'''
 	logger.debug(request)
 	
 	if request.method == 'POST':
@@ -401,79 +320,16 @@ def send_email(request):
 	
 
 def success(request):
-
+	'''
+	Returns a response message when an e-mail is succesfully sent
+	'''
 	return HttpResponse('Success! Thank you for your message.')
 
 
-'''
-######################################### Functions ###################################
-'''
-
-'''
-Checks if the file's extension is .txt.
-Warning! This extension check may not be sufficient.
-If you want to perform more thorough file format checks, try magic, django-clamav-upload
-'''
-
-def validate_file_type(title):
-	return bool(re.match('.+\.txt$', title))
-
-
-'''
-This function returns true if the tab delimited file has 2 columns
-@param file: should be given as: path + filename + extension. file to analyse.
-'''
-
-def is_protein(file):
-	num_cols = 0
-	with open(file) as f:
-		reader = csv.reader(f, delimiter='\t', skipinitialspace=True)
-		first_row = next(reader)
-		num_cols = len(first_row)
-	logger.debug("number of columns in the uploaded file: " + str(num_cols))
-	return bool(num_cols is 2)
-
-'''
-This function returns true if the tab delimited file has 5 columns
-@param file: should be given as: path + filename + extension. file to analyse.
-'''
-
-def is_gene(file):
-	num_cols = 0
-	with open(file) as f:
-		reader = csv.reader(f, delimiter='\t', skipinitialspace=True)
-		first_row = next(reader)
-		num_cols = len(first_row)
-	logger.debug("number of columns in the uploaded file: " + str(num_cols))
-	return bool(num_cols is 5)
-
-
-'''
-This function erases all files and all folders (recursively) from a given path
-@param path: folder to wipe clean
-'''
-def wipe_folder(path):
-	folder = path
-	for the_file in os.listdir(folder):
-		file_path = os.path.join(folder, the_file)
-		try:
-			if os.path.isfile(file_path):
-				os.unlink(file_path)
-			elif os.path.isdir(file_path): shutil.rmtree(file_path)
-		except Exception as e:
-			print(e)
-
-def clean_up(input_path, output_path, archive_path):
-	input_path = input_path
-	output_path = output_path
-	archive_path = archive_path
-	# erase the input, output, but keep the archive under another name
-	wipe_folder(input_path)
-	wipe_folder(output_path)
-	logger.debug("hello from cleanup")
-	# os.rename(os.path.join(archive_path, archive_name + ".zip"), os.path.join(archive_path, "archived" + str(i) + ".zip"))
-
 class AjaxRedirect(object):
+	'''
+	Class for handling ajax calls
+	'''
 	def process_response(self, request, response):
 		if request.is_ajax():
 			if type(response) == HttpResponseRedirect:
