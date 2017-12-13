@@ -129,28 +129,6 @@ def clean_up(input_path, output_path, archive_path):
     logger.debug("hello from cleanup")
     #os.rename(os.path.join(archive_path, archive_name + ".zip"), os.path.join(archive_path, "archived" + str(i) + ".zip"))
 
-@task()
-def save_string(string, path, name):
-    '''
-    string: query text provided by user, to save as a text file
-    path: where should the file be saved on the server side
-    name: the file is going to be saved on the server side under this name (with extension)
-    '''
-    with open(os.path.join(path, name), 'w') as f:
-        f.write(string)
-
-@task()       
-def save_file(file, path, name):
-    '''
-    file: file to save
-    path: where should the file be saved on the server side
-    name: the file is going to be saved on the server side under this name (with extension)
-    '''
-    f = file
-    with open(os.path.join(path, name), 'wb+') as destination:
-        for chunk in f.chunks():
-            destination.write(chunk)
-
 @task()            
 def run_yproteins():
     '''

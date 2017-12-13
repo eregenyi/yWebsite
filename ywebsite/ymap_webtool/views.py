@@ -17,6 +17,7 @@ from django.shortcuts import render_to_response # import to send an email @test
 from django.template import RequestContext, Context # import to send an email @test
 from django.template.loader import get_template # import to send an email @test
 from django.core.mail.message import EmailMessage 
+from .models import *
 
 wd = os.getcwd()
 input_path = os.path.join(wd, 'ymap_webtool', 'data', 'input')
