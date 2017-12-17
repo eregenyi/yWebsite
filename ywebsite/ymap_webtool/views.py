@@ -8,7 +8,6 @@ from shutil import make_archive
 from numba.pycc.decorators import process_input_files
 import logging
 import re
-from _overlapped import NULL
 import csv
 import os.path
 from pathlib import Path
@@ -18,7 +17,9 @@ from django.template import RequestContext, Context # import to send an email @t
 from django.template.loader import get_template # import to send an email @test
 from django.core.mail.message import EmailMessage 
 from .models import *
+import uuid
 
+uuid = uuid.uuid4()
 wd = os.getcwd()
 input_path = os.path.join(wd, 'ymap_webtool', 'data', 'input')
 output_path = os.path.join(wd, 'ymap_webtool', 'data', 'output')
@@ -189,32 +190,6 @@ def get_string(request):
 	else:
 		return HttpResponseRedirect('submission_fail')
  
-
-
-def get_string(request):
-	'''
-	takes a string entered through the HTML form,
-	validates the form
-	if the for is valid, saves it into a text file and redirects to the processing page
-	else it assignes an empty object to the form and redirects to the submission_fail page
-	@param request
-	'''
-	# if this is a POST request we need to process the form data
-	if request.method == 'POST':
-		# create a form instance and populate it with data from the request:
-		form = StringForm(request.POST)
-		# check whether it's valid:
-		if form.is_valid():
-			# process the data in form.cleaned_data as required
-			# redirect to a new URL:
-			save_string(form.cleaned_data.get('query'), input_path, input_file_name)
-			# Process data here with a separate pydev class?
-			return HttpResponseRedirect('submitted')
-
-	# if a GET (or any other method) we'll create a blank form
-	else:
-		form = StringForm()
-	return HttpResponseRedirect('submission_fail')
 
 
 def get_file(request):

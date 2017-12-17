@@ -12,7 +12,6 @@ from shutil import make_archive
 from numba.pycc.decorators import process_input_files
 import logging
 import re
-from _overlapped import NULL
 import csv
 import os.path
 from .ymap import *
@@ -106,14 +105,15 @@ def wipe_folder(path):
     @param path: folder to wipe clean
     '''
     folder = path
-    for the_file in os.listdir(folder):
-        file_path = os.path.join(folder, the_file)
-        try:
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path): shutil.rmtree(file_path)
-        except Exception as e:
-            print(e)
+    if os.path.isdir(path):
+        for the_file in os.listdir(folder):
+            file_path = os.path.join(folder, the_file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path): shutil.rmtree(file_path)
+            except Exception as e:
+                print(e)
 
 @task()
 def clean_up(input_path, output_path, archive_path):
