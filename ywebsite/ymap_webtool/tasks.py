@@ -105,7 +105,7 @@ def wipe_folder(path):
     @param path: folder to wipe clean
     '''
     folder = path
-    if os.path.isdir(path):
+    if os.path.isdir(folder):
         for the_file in os.listdir(folder):
             file_path = os.path.join(folder, the_file)
             try:
