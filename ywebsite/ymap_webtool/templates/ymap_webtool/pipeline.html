@@ -1,7 +1,7 @@
 {% extends "ymap_webtool/base.html" %}
 
 <!--template inheritance: add page title-->
-{% block title %}pipeline{% endblock %}
+{% block title %}Pipeline{% endblock %}
 
 <!--template inheritance: add the class "active in the block *_class corresponding to the current page -->
 {% block about_class %}active{% endblock %}">
@@ -15,7 +15,7 @@
 <div class= "V_menu b_col1">
             <ul class="V_menu_ul b_col1">
                         <li id="menu_overview" class ="V_menu_item "><a href={% url 'overview' %}>Overview</a></li>
-                        <li id="menu_pipeline" class ="V_menu_item active"><a href={% url 'pipeline' %}>pipeline</a></li>
+                        <li id="menu_pipeline" class ="V_menu_item active"><a href={% url 'pipeline' %}>Pipeline</a></li>
                         <li id="menu_databases" class ="V_menu_item "><a href={% url 'databases' %}>Databases</a></li>
                         <li id="menu_inputformat" class =" V_menu_item"><a href="input_format.html">Input format</a></li>
                         <li id="menu_results" class ="V_menu_item "><a href={% url 'results'%}>Results</a></li>
@@ -27,69 +27,42 @@
 
 <div class= "about_content">
             
-            <h1>
+            <h2>
             STEP 1: Mutation at DNA level to protein level (optional)
-            </h1>
+            </h2>
             <p>
             When the input file contain mutations at DNA level, it is translated to protein level for yMap
             to be able to process. All the non-synonymous mutation are reported in a file that will be use as input by the core
             function of yMap.
             </p>
             
-            <h1>
+            <h2>
             STEP 2: Mapping the mutations to protein features and post translational modifications.
-            </h1>
+            </h2>
             <p>
-            The mutations at protein level are mapped to protein features and post translational modifications. yMap generate a report file
+            The mutations at protein level are mapped to protein features and post translational modifications. yMap generates a report file
             for each types of protein features and post translational modifications that contains/overlaps with mutations from the input file.
             
-            <h2>Protein features:</h2>
-            <ul>
-                        <li>proteins domains</li>
-                                        
-                        <li>proteins-nucleotide binding domains</li>
-                                    
-                        <li>proteins structural regions</li>
-                            
-                        <li>proteins active and binding sites</li>
-            </ul>
-            
-            <h2>Post translational modifications:</h2>
-            <ul>
-                        <li>PTM present at the interface of two proteins and known to play role in interaction (Beltrao et al. Cell 2012)</li>
-                        <li>PTM present at the interface of two proteins and known to play role in interaction (Beltrao et al. Cell 2012)</li>
-                        <li>PTMs (predicted) involved in the crosstalk within a given protein at baker's years (Minguez el 2012)</li>
-                        <li>PTMs (predicted) involved in the crosstalk in different proteins at baker's years (PTMcode 2.0; Minguez el 2012)</li>
-                        <li>PTMs containing motifs in a close proximity are named hotspots (Beltrao et al. Cell 2012)</li>
-            </ul>
             </p>
              
-            <h1>
+            <h2>
             STEP 3: GO enrichment analysis
-            </h1>
+            </h2>
             <p>
-            A Go enrichement analysis is performed for thes set of proteins containing mutation located in functional region.
-            It uses the function <i>get_enriched_terms</i> from the
-            <a href= http://orange-bioinformatics.readthedocs.io/en/latest/reference/go.html>orange bioinformatics package</a>.  
-            The p-value of the Go enrichement analysis is calculated against the background of the complete genome (Demšar et al., 2013).
+            Gene Ontology (GO) enrichment effectively predicts which biological process, cellular component and molecular
+            functions are potentially disturbed by a subset of the mutations. It identifies GO terms that are overrepresented in sets of the genes
+            to which mutations have been mapped, as compared to the background of the complete yeast genome.
+            The significance of enriched terms is computed using the <a href= http://orange-bioinformatics.readthedocs.io/en/latest/reference/go.html>Orange Bioinformatics package</a>. 
             </p>
             
-            <h1>
+            <h2>
             STEP 4: Biogrid id
-            </h1>
+            </h2>
             <p>
-            yMap report the biogrid id for each mutated protein. <a href= https://thebiogrid.org/>The Biological General Repository for Interaction Datasets (BioGRID)</a>  
-             is a public database that archives and disseminates genetic and protein interaction data from model organisms and humans.         
+            The list of BioGrid IDs for each genes to which mutations have been mapped is generated. 
             </p>
             
-            
-            <h1>
-            STEP 5: Final report
-            </h1>
-            <p>
-            All the analyses are summarized in a ‘final-report’ with the proteins that have variants in different above mentioned protein functional regions, the type of mutation (synonymous or non- synonymous), feature, feature type and source of data.
-            The report is complemented with enrichments file and a BioGrid ids containing file.
-            </p>
+       
 </div>
 </div>
 {% endblock %}

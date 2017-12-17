@@ -18,7 +18,7 @@
 <div class= "V_menu b_col1">
             <ul class="V_menu_ul b_col1">
                         <li id="menu_overview" class ="V_menu_item "><a href="overview.html">Overview</a></li>
-                        <li id="menu_pipeline" class ="V_menu_item "><a href="pipeline.html">pipeline</a></li>
+                        <li id="menu_pipeline" class ="V_menu_item "><a href="pipeline.html">Pipeline</a></li>
                         <li id="menu_databases" class ="V_menu_item "><a href="databases.html">Databases</a></li>
                         <li id="menu_inputformat" class =" V_menu_item active"><a href="input_format.html">Input format</a></li>
                         <li id="menu_results" class ="V_menu_item "><a href="results.html">Results</a></li>
@@ -31,7 +31,7 @@
 <div class= "about_content">
 <p>     
 yMap take as input your list of mutations at protein or DNA level in <b>text file format</b>.
-The file can have more columns than necessary but the mendatory columns must be first and have to respect the order specified below.
+The file can have more columns than necessary but the mendatory columns must come first and respect the order specified below.
 </p>
 
 <h2>
@@ -45,7 +45,9 @@ protein id - mutation location on the protein
 <br>
 Example:
 </p>
-<img src="input_protein.png" alt="input file - mutations at protein level">
+
+{% load static %}
+<img src="{% static "ymap_webtool/images/input_protein.png" %}" alt="input file - mutations at protein level"/>
 
 <h2>
 Mutations at DNA level
@@ -58,7 +60,8 @@ chromosome number - mutation position on the chromosome - reference nucleotid - 
 <br>
 Example:
 </p>
-<img src="input_dna.png" alt="input file - mutations at DNA level">        
+{% load static %}
+<img src="{% static "ymap_webtool/images/input_dna.png" %}" alt="input file - mutations at DNA level"/>
 
 </div>
 {% endblock %}

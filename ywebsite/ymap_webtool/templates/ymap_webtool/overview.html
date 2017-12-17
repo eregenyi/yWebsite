@@ -17,7 +17,7 @@
 <div class= "V_menu b_col1">
             <ul class="V_menu_ul b_col1">
                         <li id="menu_overview" class ="V_menu_item active"><a href={% url 'overview' %}>Overview</a></li>
-                        <li id="menu_pipeline" class ="V_menu_item "><a href={% url 'pipeline' %}>pipeline</a></li>
+                        <li id="menu_pipeline" class ="V_menu_item "><a href={% url 'pipeline' %}>Pipeline</a></li>
                         <li id="menu_databases" class ="V_menu_item "><a href={% url 'databases' %}>Databases</a></li>
                         <li id="menu_inputformat" class =" V_menu_item"><a href="input_format.html">Input format</a></li>
                         <li id="menu_results" class ="V_menu_item "><a href={% url 'results'%}>Results</a></li>
@@ -29,24 +29,43 @@
 
 <div class= "about_content">
             
-yMap is a python based fast and robust automated method to map large yeast variants data to 
+YMap facilitates the interpretation of large scale variant data and the correlation of genotype to phenotype.
+<br>
+It enables the mapping of large sets of mutations to the structural/functional protein features:
+<ul>
+            <h3>Protein features from <a href="http://www.uniprot.org/">UniProt KB</a> database:</h3>
+            <ul>
+                        <li>Proteins domains</li>
+                                        
+                        <li>Proteins-nucleotide binding domains</li>
+                                    
+                        <li>Proteins structural regions</li>
+                            
+                        <li>Proteins active and binding sites</li>
+                        
+                         <li>Proteins post translational modeifications</li>
+            </ul>
             
-proteins post-translational modifications,                 
-proteins domains,          
-proteins-nucleotide binding domains, 
-proteins structural regions, 
-proteins active and binding sites 
-proteins networks visualisation. 
+            <h3>Post translational modifications from <a href="http://ptmfunc.com/">PTMfunc</a>:</h3>
+            <ul>
+                        <li>Acetylation present on a residue present at the protein interface</li>
+                        <li>Acetylation present on a residue important for protein-protein interaction</li>
+                        <li>Ubiquitination present on a residue present at the protein interface</li>
+                        <li>Ubiquitination present on a residue important for protein-protein interaction</li>
+                        <li>Phosphorylation present on a residue present at the protein interface</li>
+                        <li>Phosphorylation present on a residue important for protein-protein interaction</li>
+            </ul>
+            <h3>Post translational modifications from <a href="http://ptmcode.embl.de/">PTMcode 2.0</a>:</h3>
+            <ul>
+                        <li>PTM located in a small PTMs enriched protein motif known as hotspot (as defined by <a href="http://www.cell.com/cell/fulltext/S0092-8674(12)00706-4?_returnURL=http%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867412007064%3Fshowall%3Dtrue"> Beltrao et al. 2012</a>) </li>
+                        <li>PTM involved in interaction with an other PTM within the same protein</li>
+                        <li>PTM involved in nteraction with an other PTM located on an other protein</li>
+
+            </ul> 
+</ul>
+It also performs a GO enrichment analysis and provides protein's BioGRID ids.
 <br>
 <br>
-The protein features are collected from Uniprot.
-<br>
-<br>
-The post-translational modifications are collected from PTMcode 2.0 and PTMfunc.
-<br>
-<br>
-yMap generates a "final-report" which reports all the non-synonymous mutations that overlaps or falls inside the above mentioned proteins functional regions.
-The final-report is complemented GO enrichment analysis and biogrid visualisation id.
 
 </div>
 {% endblock %}

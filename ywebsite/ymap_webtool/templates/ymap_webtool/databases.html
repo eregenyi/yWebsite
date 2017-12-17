@@ -17,7 +17,7 @@
 <div class= "V_menu b_col1">
             <ul class="V_menu_ul b_col1">
                         <li id="menu_overview" class ="V_menu_item "><a href={% url 'overview' %}>Overview</a></li>
-                        <li id="menu_pipeline" class ="V_menu_item "><a href={% url 'pipeline' %}>pipeline</a></li>
+                        <li id="menu_pipeline" class ="V_menu_item "><a href={% url 'pipeline' %}>Pipeline</a></li>
                         <li id="menu_databases" class ="V_menu_item active"><a href={% url 'databases' %}>Databases</a></li>
                         <li id="menu_inputformat" class =" V_menu_item"><a href="input_format.html">Input format</a></li>
                         <li id="menu_results" class ="V_menu_item "><a href={% url 'results'%}>Results</a></li>
@@ -29,35 +29,22 @@
 
 <div class= "about_content">
             
-The yMap website hosts data about full yeast genome which is use as reference to map the mutations.
+The yMOOSE server hosts several datasets downloaded from several reference databases.
 <br>
 <br>
-The yeast post translational modifications (PTMs) are obtained from
-
-<a href="http://ptmcode.embl.de/">PTMcode 2.0</a>
-
-and
-<a href="http://ptmfunc.com/">PTMfunc</a>.
-
+The translation of the mutation from DNA level to protein level and the identification of non-synonymous SNPs
+is performed using the complete <i>Saccharomyces S. cerevisiae</i>'s annotated sequence from the <a href="https://www.yeastgenome.org/">Saccharomyces Genome Database</a> (SGD) 
 <br>
 <br>
-The protein features (domains, nucleotide binding domains, structural regions, active and binding sites) are obtained from
-<a href="http://www.uniprot.org/">UniProt</a>.
-
+Functional and structural annotations of the complete <i>Saccharomyces S. cerevisiae</i> proteome along with the position of modified post-translational modified residues are obtained
+from the <a href="http://www.uniprot.org/">UniProt KB</a> database.
 <br>
 <br>
-
-Ymap uses data from the
-<a href="https://www.yeastgenome.org/">Saccharomyces Genome Database (SGD)</a>
-to translate mutations at DNA level to protein level.
-
-<br>
-<br>
-
-These data are updated on a regular basis.
-
-
-
+The list of <a href="https://thebiogrid.org/">BioGRID</a> IDs for the complete <i>Saccharomyces S. cerevisiae</i>  yeast proteome
+is is also obtained from the <a href="http://www.uniprot.org/">UniProt KB</a> database.
+<br><br>
+More detailed PTM annotations are obtained from <a href="http://ptmcode.embl.de/">PTMcode 2.0</a> and <a href="http://ptmfunc.com/">PTMfunc</a>. 
+<br><br>
 
 </div>
 {% endblock %}
