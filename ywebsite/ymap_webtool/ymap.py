@@ -27,43 +27,225 @@
 # see README file 
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-try:
-    from builtins import next
-    from builtins import str
-    from builtins import range
-    from builtins import object
-    from builtins import bytes
-except ImportError:
-    pass
-import os
-import sys
-import math
-import zipfile
-from itertools import groupby
-import shutil
-import time
-import urllib
-from decimal import Decimal # ADDED
-from collections import OrderedDict
-import webbrowser
-try:
-    import Orange
-except ImportError:
-    import Orange3
-from orangecontrib.bio import go    
+from __future__ import print_function, absolute_import, division, unicode_literals
 from six.moves import range
-ontology = go.Ontology()
-annotations = go.Annotations("sgd", ontology=ontology)
+from pkg_resources import resource_filename, Requirement
+from collections import defaultdict
+from orangecontrib.bio import go    
 try:
     from urllib.request import urlopen
 except ImportError:
     from urllib2 import urlopen
-import pkg_resources
-from pkg_resources import resource_stream
+
+import os
+import zipfile
+import shutil
+import time
+import webbrowser
+import re
+
+### DEFINE VARIABLES ###
+
+# Create Ontology and Annotation objects for use in GO enrichment (see enrich() function)
+ontology = go.Ontology()
+annotations = go.Annotations('sgd')
+
+wd = os.getcwd() 
+
+# Setup filenames
+# Input files
+mutation_prot_file = 'mutation.txt'
+mutation_gene_file = 'mutated_proteins.txt'
+
+# Downloaded files from UniProt and SGD (Saccharomyces Genome Database) and copied PTMfunc and PTMcode data files
+uniprot_file = 'uniprot_mod_raw.txt'
+gff_file = 'gff.txt'
+yeastID_file = 'yeastID.txt'
+
+interface_acet_file = '3DID_aceksites_interfaceRes_sc.txt'
+interface_phos_file = '3DID_phosphosites_interfaceRes_sc.txt'
+interface_ubiq_file = '3DID_ubisites_interfaceRessc_sc.txt'
+regulatory_hotspots_file = 'schotspot_updated.txt'
+interact_acet_file = 'SC_acet_interactions.txt'
+interact_phos_file = 'SC_psites_interactions_sc.txt'
+interact_ubiq_file = 'SC_ubi_interactions_sc.txt'
+within_prot_file = 'sc_within_proteins.txt'
+between_prot_zip_file = 'sc_btw_proteins.zip'
+between_prot_file = 'sc_btw_proteins.txt'
+
+uniprot_biogrid_file = 'uniprot_bioGrid.txt'
+
+# Intermediate processing files
+bact_file = 'bact.txt'
+ptms_file = 'PTMs.txt'
+domains_file = 'domains.txt'
+nucleotide_file = 'nucleotide.txt'
+pdb_file = 'pdb.txt'
+
+frmt_file = 'frmt.txt'
+
+d_id_map_file = 'd_id_map.txt' # Links Uniprot ID to Gene ID, ORF start, ORF stop, strand orientation 
+sites_id_file = 'sites_id.txt'
+ptm_id_file = 'PTM_id_file.txt'
+domain_id_file = 'id_domain.txt'
+nucleotide_id_file = 'id_nucleotide.txt' # Nucleotide binding sites
+struct_id_file = 'id_struct.txt' # Link UniProt ID to PDB IDs
+
+interface_acet_id_file = 'interface_acet_id.txt'
+interface_phos_id_file = 'interface_phos_id.txt'
+interface_ubiq_id_file = 'interface_ubiq_id.txt'
+regulatory_hotspots_id_file = 'regulatory_hotspots_id.txt'
+interact_acet_id_file = 'interact_acet_id.txt'
+interact_phos_id_file = 'interact_phos_id.txt'
+interact_ubiq_id_file = 'interact_ubiq_id.txt'
+within_prot_id_file = 'within_prot_id.txt'
+between_prot_id_file = 'between_prot_id.txt'
+
+# Output files
+summary_file = 'summary.txt'
+
+mapped_sites_file = 'ab_mutation_file.txt'
+mapped_ptms_file = 'mapped_ptms.txt'
+mapped_domains_file = 'domains_mapped.txt'
+mapped_nucleotide_file = 'nucleotide_map.txt'
+mapped_struct_file = 'stru_mutation.txt' # Structural regions of protein e.g. beta sheet, alpha helix, turn 
+
+general_mapped_interface_file = 'interface_mutation.txt' # This variable refers to the name of the file written by ymap.interface().
+# The mapped_interface variables are used in parts of this program for semantic clarity only
+mapped_interface_acet_file = general_mapped_interface_file
+mapped_interface_phos_file = general_mapped_interface_file
+mapped_interface_ubiq_file = general_mapped_interface_file
+general_mapped_ppi_file = 'ppi_mutation.txt'
+# The mapped_interact variables are used in parts of this program for semantic clarity only
+mapped_interact_acet_file = general_mapped_ppi_file
+mapped_interact_phos_file = general_mapped_ppi_file
+mapped_interact_ubiq_file = general_mapped_ppi_file
+mapped_hotspot_file = 'hotspot.txt'
+mapped_within_prot_file = 'within_protein.txt'
+mapped_between_prot_file = 'ptm_between_proteins.txt'
+
+p_value_file = 'pvalue.txt'
+biog_file = 'biog.txt'
+final_report_file = 'final_report.txt'
+errors_file = 'errors.txt'
+
+# Setup directory tree paths 
+# Data, input, output directories
+data_dir_path = os.path.join(wd, 'ymap_webtool', 'data', 'ymap_data')
+input_dir_path = os.path.join(wd, 'ymap_webtool', 'data', 'input')
+output_dir_path = os.path.join(wd, 'ymap_webtool', 'data', 'output') 
+
+# Paths for output directories
+domains_dir_path = os.path.join(output_dir_path, 'Domains') 
+ptms_dir_path = os.path.join(output_dir_path, 'PTMs')
+nuc_bind_dir_path = os.path.join(output_dir_path, 'Nucleotide_binding')
+ab_sites_dir_path = os.path.join(output_dir_path, 'A-B-sites')
+pdb_dir_path = os.path.join(output_dir_path, 'PDB')
+interface_dir_path = os.path.join(output_dir_path, 'Interface')
+interface_acet_dir_path = os.path.join(interface_dir_path, 'Acetylation')
+interface_phos_dir_path = os.path.join(interface_dir_path, 'Phosphorylation')
+interface_ubiq_dir_path = os.path.join(interface_dir_path, 'Ubiquitination')
+ppi_dir_path = os.path.join(output_dir_path, 'PPI')
+ppi_acet_dir_path = os.path.join(ppi_dir_path, 'Acetylation')
+ppi_phos_dir_path = os.path.join(ppi_dir_path, 'Phosphorylation')
+ppi_ubiq_dir_path = os.path.join(ppi_dir_path, 'Ubiquitination')
+ptm_within_dir_path = os.path.join(output_dir_path, 'PTMs_within_Proteins')
+ptm_between_dir_path = os.path.join(output_dir_path, 'PTMs_between_Proteins')
+ptm_hotspot_dir_path = os.path.join(output_dir_path, 'PTMs_hotSpots')
+
+dirs = [
+    domains_dir_path,  
+    ptms_dir_path, 
+    nuc_bind_dir_path, 
+    ab_sites_dir_path, 
+    pdb_dir_path, 
+    interface_dir_path, 
+    interface_acet_dir_path, 
+    interface_phos_dir_path, 
+    interface_ubiq_dir_path, 
+    ppi_dir_path, 
+    ppi_acet_dir_path, 
+    ppi_phos_dir_path, 
+    ppi_ubiq_dir_path, 
+    ptm_within_dir_path, 
+    ptm_between_dir_path, 
+    ptm_hotspot_dir_path
+]
+
+def makeDirTree(dirs):
+    for directory in dirs:
+        os.makedirs(directory)
+
+# Setup paths to data, input and output files
+# Input files
+mutation_prot_file_path = os.path.join(input_dir_path, mutation_prot_file)
+mutation_gene_file_path = os.path.join(input_dir_path, mutation_gene_file)
+
+# Downloaded files from UniProt and SGD (Saccharomyces Genome Database) and copied PTMfunc and PTMcode data files
+uniprot_file_path = os.path.join(data_dir_path, uniprot_file)
+gff_file_path = os.path.join(data_dir_path, gff_file)
+yeastID_file_path = os.path.join(data_dir_path, yeastID_file)
+
+interface_acet_file_path = os.path.join(data_dir_path, interface_acet_file)
+interface_phos_file_path = os.path.join(data_dir_path, interface_phos_file)
+interface_ubiq_file_path = os.path.join(data_dir_path, interface_ubiq_file)
+regulatory_hotspots_file_path = os.path.join(data_dir_path, regulatory_hotspots_file)
+interact_acet_file_path = os.path.join(data_dir_path, interact_acet_file)
+interact_phos_file_path = os.path.join(data_dir_path, interact_phos_file)
+interact_ubiq_file_path = os.path.join(data_dir_path, interact_ubiq_file)
+within_prot_file_path = os.path.join(data_dir_path, within_prot_file)
+between_prot_zip_file_path = os.path.join(data_dir_path, between_prot_zip_file)
+between_prot_file_path = os.path.join(data_dir_path, between_prot_file)
+
+uniprot_biogrid_file_path = os.path.join(data_dir_path, uniprot_biogrid_file)
+
+# Intermediate processing files
+bact_file_path = os.path.join(data_dir_path, bact_file)
+ptms_file_path = os.path.join(data_dir_path, ptms_file)
+domains_file_path = os.path.join(data_dir_path, domains_file)
+nucleotide_file_path = os.path.join(data_dir_path, nucleotide_file)
+pdb_file_path = os.path.join(data_dir_path, pdb_file)
+
+frmt_file_path = os.path.join(data_dir_path, frmt_file)
+
+d_id_map_file_path = os.path.join(data_dir_path, d_id_map_file) 
+sites_id_file_path = os.path.join(data_dir_path, sites_id_file)
+ptm_id_file_path = os.path.join(data_dir_path, ptm_id_file)
+domain_id_file_path = os.path.join(data_dir_path, domain_id_file)
+nucleotide_id_file_path = os.path.join(data_dir_path, nucleotide_id_file)
+struct_id_file_path = os.path.join(data_dir_path, struct_id_file)
+
+interface_acet_id_file_path = os.path.join(data_dir_path, interface_acet_id_file)
+interface_phos_id_file_path = os.path.join(data_dir_path, interface_phos_id_file)
+interface_ubiq_id_file_path = os.path.join(data_dir_path, interface_ubiq_id_file)
+regulatory_hotspots_id_file_path = os.path.join(data_dir_path, regulatory_hotspots_id_file)
+interact_acet_id_file_path = os.path.join(data_dir_path, interact_acet_id_file)
+interact_phos_id_file_path = os.path.join(data_dir_path, interact_phos_id_file)
+interact_ubiq_id_file_path = os.path.join(data_dir_path, interact_ubiq_id_file)
+within_prot_id_file_path = os.path.join(data_dir_path, within_prot_id_file)
+between_prot_id_file_path = os.path.join(data_dir_path, between_prot_id_file)
+
+# Paths to output files
+summary_file_path = os.path.join(output_dir_path, summary_file)
+final_report_file_path = os.path.join(output_dir_path, final_report_file)
+errors_file_path = os.path.join(output_dir_path, errors_file)
+
+mapped_sites_file_path = os.path.join(output_dir_path, mapped_sites_file)
+mapped_ptms_file_path = os.path.join(output_dir_path, mapped_ptms_file)
+mapped_domains_file_path = os.path.join(output_dir_path, mapped_domains_file)
+mapped_nucleotide_file_path = os.path.join(output_dir_path, mapped_nucleotide_file)
+mapped_struct_file_path = os.path.join(output_dir_path, mapped_struct_file)
+
+mapped_interface_acet_file_path = os.path.join(output_dir_path, mapped_interface_acet_file)
+mapped_interface_phos_file_path = os.path.join(output_dir_path, mapped_interface_phos_file)
+mapped_interface_ubiq_file_path = os.path.join(output_dir_path, mapped_interface_ubiq_file)
+mapped_interact_acet_file_path = os.path.join(output_dir_path, mapped_interact_acet_file)
+mapped_interact_phos_file_path = os.path.join(output_dir_path, mapped_interact_phos_file)
+mapped_interact_ubiq_file_path = os.path.join(output_dir_path, mapped_interact_ubiq_file)
+mapped_hotspot_file_path = os.path.join(output_dir_path, mapped_hotspot_file)
+mapped_within_prot_file_path = os.path.join(output_dir_path, mapped_within_prot_file)
+mapped_between_prot_file_path = os.path.join(output_dir_path, mapped_between_prot_file)
+
 
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ Mutation type (Synon | Non-Synon | Stop codon) module (see exmple data) \\\\\\\\\\\\\\\\\\\\\
@@ -90,7 +272,7 @@ genetic_code = {
 
 
 def translate_dna(dna):
-    """ calculate the start position for the final codon """
+    """Return the protein sequence encoded by the given cDNA sequence."""
     last_codon_start = len(dna) - 2 
     protein = "" 
     # process the dna sequence in three base chunks
@@ -102,7 +284,7 @@ def translate_dna(dna):
 
 
 def revcomp(dna, reverse=True, complement=True):
-    """ reverse complement of a protein in negative strand"""
+    """Return the reverse complement of a given DNA sequence."""
     bases = 'ATGCTACG'
     complement_dict = {bases[i]:bases[i+4] for i in range(4)}
     if reverse:
@@ -115,93 +297,114 @@ def revcomp(dna, reverse=True, complement=True):
     return ''.join(result_as_list)
 
 
-def mutation_file(mutation, d_id):
-        """ defines the mutation types; either Non-Synonmous or Stop Codon"""
-        with open(protein_input_file, 'wb') as t:   
-            with open(mutation, 'rU') as mut: 
-                for m in mut:
-                    m = m.rstrip().split()
-                    with open(d_id,'rU') as id:    
-                        for i in id:
-                            i = i.rstrip().split()
-                            if not m[0].startswith('c'.upper()):
-                                if len(m) != 5  or not m[0].startswith('c'.lower()):
-                                    raise StopIteration('Please correct the format of input mutation file')
-                                else:
-                                    if m[4] == i[2]:
-                                        take = m[4]+'\t'+m[0]+'\t'+i[3]+'\t'+m[1]+'\t'+i[4]+'\t'+m[2]+'\t'+m[3]+'\t'+i[5]
-                                        take1= take.rstrip().split()       
-                                        with open(gff_path, 'rU') as orf:     
-                                            linee = orf.readlines()[23078:]
-                                            up = (x[1] for x in groupby(linee, lambda line: line[0] == ">")) 
-                                            for head in up:
-                                                head = next(head)[1:].strip()
-                                                seq = "".join(s.strip() for s in next(up))
-                                                if head == take1[1] and take1[0] == i[2] and take1[7] == '-':   
-                                                    cod = 1 + (int(take1[4])-int(take1[3]))                       
-                                                    cc = math.ceil(int(cod)/float(3))
-                                                    c = str(cc).split('.')                         
-                                                    cn = int(c[0])-1    
-                                                    sli_n = seq[int(take1[2]):int(take1[4])]                  
-                                                    rev_sli_n = revcomp(sli_n, reverse=True, complement=True)  
-                                                    sli_m_n = sli_n[:int(-cod)]+take1[6]+sli_n[int(-cod)+1:] 
-                                                    rev_sli_m_n = revcomp(sli_m_n, reverse=True, complement=True)   
-                                                    wild_type_rev_n = translate_dna(rev_sli_n)                
-                                                    mut_type_n = translate_dna(rev_sli_m_n)
-                                                    try:
-                                                        if wild_type_rev_n[cn] != mut_type_n[cn] and mut_type_n[cn] == '_':
-                                                            pic = take1[0]+'\t'+str(c[0])+'\t'+wild_type_rev_n[cn]+'\t'+mut_type_n[cn]+'\t'+'Stop' +'\t'+take1[1]+'\t'+take1[3]
-                                                            if pic > str(0): 
-                                                                t = open(protein_input_file, 'a')
-                                                                t.write(pic+'\n')
-                                                    except IndexError as e:
-                                                        pic1 =  take1[0]+ '\t'+ 'Error:'+'\t'+ str(e)
-                                                        t = open(protein_input_file, 'a+')
-                                                        t.write(pic1+'\n')
-                                                        continue
-                                                    try:
-                                                        if wild_type_rev_n[cn] != mut_type_n[cn] and mut_type_n[cn] != '_':
-                                                            pic = take1[0]+'\t'+str(c[0])+'\t'+wild_type_rev_n[cn]+'\t'+mut_type_n[cn]+'\t'+'Non-Synonymous' +'\t'+take1[1]+'\t'+take1[3]                                                                                                                    
-                                                            if pic > str(0):
-                                                                t = open(protein_input_file, 'a+')
-                                                                t.write(pic+'\n')
-                                                    except IndexError as e:
-                                                        pic1 =  take1[0]+ '\t'+ 'Error:'+'\t'+ str(e)
-                                                        t = open(protein_input_file, 'a+')
-                                                        t.write(pic1+'\n')
-                                                        continue
-                                                if head == take1[1] and take1[0]==i[2] and take1[7] == '+':
-                                                    code = int(take1[3])-int(take1[2])
-                                                    code1 = 1 + (int(take1[3])-int(take1[2])) 
-                                                    cce = math.ceil(int(code1)/float(3)) 
-                                                    ce = str(cce).split('.') 
-                                                    cp = int(ce[0])-1                  
-                                                    pos = int(take1[2]) - 1                               
-                                                    sli_p = seq[int(pos):int(take1[4])]                   
-                                                    sli_m_p = sli_p[:int(code)]+take1[6]+sli_p[int(code)+1:]  
-                                                    wild_type_p = translate_dna(sli_p)                    
-                                                    mut_type_p = translate_dna(sli_m_p)
-                                                    try:                   
-                                                        if wild_type_p[cp] != mut_type_p[cp] and mut_type_p[cp] != '_': 
-                                                            pick = take1[0]+'\t'+str(ce[0])+'\t'+wild_type_p[cp]+'\t'+mut_type_p[cp]+'\t'+'Non-Synonymous'+'\t'+take1[1]+'\t'+take1[3]
-                                                            if pick > str(0):
-                                                                with open(protein_input_file, 'a+') as t:
-                                                                    t.write(pick+'\n')
-                                                    except IndexError as e:
-                                                        pic1 =  take1[0]+ '\t'+ 'Error:'+'\t'+ str(e)
-                                                        t = open(protein_input_file, 'a+')
-                                                        t.write(pic1+'\n')
-                                                        continue
-                                                    try:
-                                                        if wild_type_p[cp] != mut_type_p[cp] and mut_type_p[cp]=='_':
-                                                            pick = take1[0]+'\t'+str(ce[0])+'\t'+wild_type_p[cp]+'\t'+mut_type_p[cp]+'\t'+'Stop' +'\t'+take1[1]+'\t'+take1[3]
-                                                            if pick > str(0):
-                                                                with open(protein_input_file, 'a+') as t:
-                                                                    t.write(pick+'\n')
-                                                    except IndexError as e:
-                                                        pic1 =  take1[0]+ '\t'+ 'Error:'+'\t'+ str(e)
-                                                        t = open(protein_input_file, 'a+')
-                                                        t.write(pic1+'\n')
+def parse_gene_mutations(mut_gene_input):
+    """Parse input DNA/gene-level mutation file into a dictionary of mutations.
+    
+    Returns the dictionary. Key = mutated gene name. Value = set of tuples, each containing data
+    about a mutation: chromosome, position, reference nucleotide (as per reference genome) and 
+    alternative nucleotide.
+    
+    Arguments:
+    mut_gene_input -- file path, mapping mutated genes (common names) to point mutations on specified chromosomes.
+    """
+    parsed_mutations = defaultdict(set) # Implement values as sets to remove duplicates
+    with open(mut_gene_input, 'r') as mutations:
+        # next(mutations) # Skip the header - Not necessary for web app (no check for header implemented yet)
+        for line in mutations:
+            chromosome, position, ref_nt, alt_nt, common_name  = line.rstrip('\n').split('\t')
+            parsed_mutations[common_name].add((chromosome, position, ref_nt, alt_nt))
+    return parsed_mutations 
+
+
+def parse_genome(gff_input):
+    """Parse General Feature Format (GFF) file for yeast genome into a dictionary.
+    
+    Returns the dictionary. Key = chromosome id e.g. chrI. Value = sequence of chromosome
+    (from reference genome).
+    
+    Arguments:
+    gff_input -- file path, General Feature Format (GFF) file for yeast genome.
+    """
+    chr_seq = re.compile(r'>(chr[IVX]{1,4})')
+    with open(gff_input, 'r') as gff:
+        for line in gff:
+            if line.startswith('##FASTA'):
+                break
+        fasta = gff.read()
+        fasta = fasta.replace('\n','')
+        fasta = chr_seq.split(fasta)
+        chromosomes = fasta[1::2]
+        sequences = fasta[2::2]
+    return dict(zip(chromosomes,sequences))
+
+
+def parse_gene_loci(d_id_input):
+    """Parse a file that maps UniProt IDs and gene identifiers to chromosome loci (start, end, strand orientation) into a dictionary.
+    
+    Returns the dictionary. Key = gene name. Value = list of start position, end position, strand orientation and chromosome on which the gene is located.
+    
+    Arguments:
+    d_id_input -- file path, mapping UniProt IDs and gene identifiers to chromosome loci (start, end, strand orientation)
+    """
+    gene_map = {}
+    with open(d_id_input, 'r') as gene_locations:
+        for line in gene_locations:
+            uniprot_id, sgd_name, common_name, start, end, strand, chromosome = line.rstrip('\n').split('\t')
+            gene_map[common_name] = [start, end, strand, chromosome] # Assumes unique common gene/protein name!
+    return gene_map
+
+def mutation_file(mut_gene_input, gff_input, d_id_input, mut_prot_output, errors_output):
+    """Converts a file of mutations at DNA/gene-level to mutations at the protein-level.
+    
+    Arguments:
+    mut_gene_input -- file path, mapping mutated genes (common names) to point mutations on specified chromosomes
+    gff_input -- file path, General Feature Format (GFF) file for yeast genome
+    d_id_input -- file path, mapping UniProt IDs and gene identifiers to chromosome loci (start, end, strand orientation)
+    mut_prot_output -- file path, mapping mutated proteins (common names) to non-synonymous or stop mutations 
+    errors_output -- file path, listing any errors that were raised during data processing
+    """
+    lines = []
+    error_lines = []
+    mutations = parse_gene_mutations(mut_gene_input)
+    chromosome_seqs = parse_genome(gff_input)
+    gene_map = parse_gene_loci(d_id_input)
+    for gene, uniq_mutations in mutations.items():
+        if gene == 'INTERGENIC': 
+            continue
+        for uniq_mutation in uniq_mutations:
+            chr, position, ref_nt, alt_nt = uniq_mutation
+            try:
+                start, end, strand, chromosome = gene_map[gene] #TODO: Implement check for strand sense before translating - that's what the reverse complement is for
+            except KeyError:
+                line = '\t'.join(['UNKNOWN GENE NAME', gene]) + '\n' #TODO: Add troubleshooting reference
+                error_lines.append(line)
+                continue
+            start = int(start)
+            end = int(end)
+            position = int(position)
+            relative_mut_pos = position - start
+            mutated_aa_pos = relative_mut_pos // 3  # Note we are rounding down not up, because with the python indices, we would have to minus 1 anyway
+            gene_seq = chromosome_seqs[chromosome][start - 1 : end] # Adjust indices since chromosome sequence positions start from 1, not 0 AND last second in slice is exclusive
+            if strand == '-':
+                gene_seq = revcomp(gene_seq)
+            protein_normal = translate_dna(gene_seq)
+#             assert gene_seq[relative_mut_pos - 1] == ref_nt #TODO: No need to check reference nucleotide in input file.
+            mutated_gene_seq = gene_seq[:relative_mut_pos - 1] + alt_nt + gene_seq[relative_mut_pos:] # Because strings are immutable
+            protein_mutant = translate_dna(mutated_gene_seq)
+            normal_aa = protein_normal[mutated_aa_pos]
+            mutated_aa = protein_mutant[mutated_aa_pos]
+            if normal_aa == mutated_aa:
+                line = '\t'.join([gene, str(mutated_aa_pos + 1), normal_aa, mutated_aa, 'Synonymous', chromosome, str(position)]) + '\n' # Need to add 1 back onto mutated_aa_pos to reflect real position...
+                continue #TODO: Currently, we don't record synonymous mutations
+            elif normal_aa != '_' and mutated_aa == '_':
+                line = '\t'.join([gene, str(mutated_aa_pos + 1), normal_aa, mutated_aa, 'Stop', chromosome, str(position)]) + '\n' # Need to add 1 back onto mutated_aa_pos to reflect real position... 
+            else:
+                line = '\t'.join([gene, str(mutated_aa_pos + 1), normal_aa, mutated_aa, 'Non-Synonymous', chromosome, str(position)]) + '\n' # Need to add 1 back onto mutated_aa_pos to reflect real position...
+            lines.append(line)
+    with open(mut_prot_output, 'w') as protein_mutations:
+        protein_mutations.writelines(lines)
+    with open(errors_output, 'a') as errors:
+        errors.writelines(error_lines)
 
 
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -209,544 +412,534 @@ def mutation_file(mutation, d_id):
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-class YGtPM(object):
+def parse_gene_names(yeastID_input):
+    """Parse the yeastID_input file (mapping UniProt IDs to gene names) into a dictionary."""
+    gene_names = {}
+    with open(yeastID_input, 'r') as proteins:
+        next(proteins) # skip the header
+        for line in proteins:
+            common_names = []
+            sgd_names = []
+            uniprot_id, sgd_name, common_name = line.rstrip('\n').split('\t')
+            if sgd_name == '': # Replace empty strings with a missing value string e.g. NA
+                sgd_name = 'NA'
+            if common_name == '':
+                common_name = 'NA'
+            if ';' in common_name: # Check for multiple common names for a given UniProt ID
+                common_names = common_name.split('; ')
+                common_names = ['NA' if name == '' else name for name in common_names] # Replace empty strings with a missing value string e.g. NA
+            if ';' in sgd_name: # Check for multiple locus names for a given UniProt ID
+                sgd_names = sgd_name.split('; ')
+                sgd_names = ['NA' if name == '' else name for name in sgd_names] # Replace empty strings with a missing value string e.g. NA
+            if common_names or sgd_names:
+                gene_names[uniprot_id] = list(zip(common_names, sgd_names)) # Create a list of tuples, each a (common name, sgd name) pair
+            else:        
+                gene_names[uniprot_id] = [(common_name, sgd_name)]
+    return gene_names
+
+# Assumes unique sgd_name (locus name)
+def parse_names_by_locus(gene_names):
+    """Parse the gene_names into a dictionary (key = locus_name, value = list of gene names).
+    
+    Arguments:
+    gene_names -- dictionary, key = UniProt ID; value = list of (sgd_name, common_name) pairs
+    """
+    gene_names_by_locus = {}
+    for uniprot_id, names in gene_names.items():
+        for common_name, sgd_name in names:
+            gene_names_by_locus[sgd_name] = [uniprot_id, sgd_name, common_name]
+    return gene_names_by_locus
+
+def parse_mutations(mut_prot_input):
+    """Parse the mut_prot_input file (mapping mutated proteins to mutation positions) into a dictionary."""
+    mutated_proteins = {}
+    with open(mut_prot_input, 'r') as mutations:
+        #TODO: Write a check for a header - perhaps specify parameter header=T, like some R functions (give user flexibility) 
+        # next(mutations) # Skip the header - Not necessary for web app (no check for header implemented yet)
+        for line in mutations:
+            common_name, mutation_pos = line.rstrip('\n').split('\t')[:2] # Take index to work with mutation input file with >2 columns
+            if common_name not in mutated_proteins:
+                mutated_proteins[common_name] = {mutation_pos} # Mutation positions put into set to remove duplicates
+            else:
+                mutated_proteins[common_name].add(mutation_pos)
+    return mutated_proteins
+
+def parse_biogrid(uniprot_biogrid_input): 
+    """Return dictionary mapping UniProt IDs to BioGrid IDs.""" 
+    uniprot_biogrid_map = {}
+    with open(uniprot_biogrid_input, 'r') as uniprot_biogrid:
+        next(uniprot_biogrid) # Skip the header
+        for line in uniprot_biogrid:
+            uniprot_id, biogrid_ids = line.rstrip(';\n').split('\t')
+            biogrid_ids = biogrid_ids.split(';')
+            uniprot_biogrid_map[uniprot_id] = biogrid_ids
+    return uniprot_biogrid_map
+
+def gff(gff_output):
+    """Downloads the current General Feature Format (GFF) file for the Saccharomyces cerevisiae genome"""
+    yeast_gff = urlopen('http://downloads.yeastgenome.org/curation/chromosomal_feature/saccharomyces_cerevisiae.gff')
+    with open(gff_output,'wb') as output_file:
+        output_file.write(yeast_gff.read())
+    
+
+def frmt(gff_input, frmt_output):
+    """Reformat a General Feature Format (GFF) file into a tab-delimited file (tsv) with columns gene id, start and end with strand orientation."""
+    id_regex = re.compile(r'ID=(.*?);')
+    lines = []
+    with open(gff_input, 'r') as gff:
+        for line in gff:
+            if line.startswith('###'):
+                break
+            elif line.startswith(('##', '#')):
+                continue
+            chromosome, source, feature, start, end, score, strand, frame, attribute = line.split()
+            if feature == 'gene':
+                gene_id = id_regex.match(attribute).group(1)
+                new_line = '\t'.join([gene_id, start, end, strand, chromosome]) + '\n'
+                lines.append(new_line)
+    with open(frmt_output,'w') as parsed_gff:
+        parsed_gff.writelines(lines)
+
+
+# IMPORTANT TO NOTE - UniProt IDs are not unique in the output file of this function. See P02994 for example.
+# This is because some UniProt IDs map to more than one locus. 
+def id_map(gene_names_by_locus, frmt_input, d_id_map_output):
+    """Map UniProt IDs to gene names and genomic loci (start, end positions and strand orientation).
+    
+    gene_names_by_locus -- dictionary, key = locus_name, value = list of gene names
+    frmt_input -- file path, mapping gene (locus) name to start and end positions of locus (on a chromosome) and strand orientation)
+    d_id_map_output -- file path, mapping UniProt IDs to gene names and genomic locus data
+    """
+    lines = []
+    with open(frmt_input, 'r') as gff:
+        #TODO: Write a check for a header - perhaps specify parameter header=T, like some R functions (give user flexibility) 
+        next(gff) # Skip the header
+        for line in gff:
+            sgd_name, start, end, strand, chromosome = line.rstrip('\n').split('\t')
+            new_line = gene_names_by_locus[sgd_name].copy() #TODO: Is this still necessary? Are dictionaries passed in by value?
+            new_line.extend([start, end, strand, chromosome])
+            new_line = '\t'.join(new_line) + '\n'
+            lines.append(new_line)
+    with open(d_id_map_output, 'w') as protein_loci_mapped:
+        protein_loci_mapped.writelines(lines)
+
+
+def pTMdata(uniprot_output):
+    """Download up-to-date UniProt data file using the following query settings: Species: Saccharomyces cerevisiae, ...""" #TODO: Update documentation with query settings
+    #TODO: Make the uniprot URL cleaner/more understandable. See http://www.uniprot.org/help/api_queries
+    uniprot = urlopen('http://www.uniprot.org/uniprot/?query=yeast&fil=organism%3A%22Saccharomyces%20cerevisiae%20(strain%20ATCC%20204508%20%2F%20S288c)%20(Baker%27s%20yeast)%20%5B559292%5D%22&sort=score&format=gff&columns=id,feature(MODIFIED%20RESIDUE)')
+    with open(uniprot_output,'wb') as output_file:
+        output_file.write(uniprot.read())
+
+
+def make_ptms_file(uniprot_input, ptms_output):
+    """Extract Post-Translational Modification (PTM) data from a downloaded Uniprot file and write to tab-delimited (tsv) file."""
+    annotation_regex = re.compile(r'Note=(.*?)(;|$)') # Alternation needed for entries that only contain a "Note" in the attribute string (see below)
+    lines = []
+    with open(uniprot_input, 'r') as uniprot:
+        for line in uniprot:
+            if not line.startswith('##'): #TODO: Decide whether this implementation is better than "if line.startswith('##'): continue"
+                uniprot_id, source, feature, start, end, score, strand, frame, attribute = line.rstrip().split('\t')
+                if feature in ('Lipidation', 'Glycosylation', 'Modified residue', 'Cross-link'):
+                    modification = annotation_regex.match(attribute).group(1)
+                    new_line = '\t'.join([uniprot_id, start, modification]) + '\n'
+                    lines.append(new_line)
+    with open(ptms_output, 'w') as ptms:
+        ptms.writelines(lines)
+
+
+def iD(yeastID_output):
+    """Download up-to-date UniProt data file using the following query settings: Species: Saccharomyces cerevisiae, ...""" #TODO: Update documentation with query settings
+    #TODO: Make the uniprot URL cleaner/more understandable. See http://www.uniprot.org/help/api_queries
+    uniprot = urlopen('http://www.uniprot.org/uniprot/?query=yeast&fil=organism%3A%22Saccharomyces%20cerevisiae%20(strain%20ATCC%20204508%20%2F%20S288c)%20(Baker%27s%20yeast)%20%5B559292%5D%22&sort=score&format=tab&columns=id,genes(OLN),%2Cgenes(PREFERRED)')
+    with open(yeastID_output,'wb') as output_file:
+        output_file.write(uniprot.read())
 
     
-    def gff(self):
-        """ The genomic coordinates downloaded in gff formate for further processing to calculate mutated codons, if not
-              available, see next method"""
-        rsponse = urlopen("http://downloads.yeastgenome.org/curation/chromosomal_feature/saccharomyces_cerevisiae.gff")
-        page = rsponse.read()
-        file = open(gff_path,'wb')  
-        file.write(page)
-        file.close()
-        
-
-    def frmt(self, file_gff):
-        """This method format the gff file into a tsv one, with protein id, start and end with strand orientation"""
-        with open(frmt_path,'w') as file4:
-            with open(file_gff, 'r') as file_gff:
-                for line in file_gff:
-                    if not line.startswith('##') and not line.startswith('#'):
-                        word = line.split()
-                        if len(word)!=1 and word[2]=='gene':
-                            result = word[3]+'\t'+word[4]+'\t'+word[6]+'\t'+word[8]
-                            result = result.split()
-                            result = result[3].split(';')
-                            results = result[0].split('=')
-                            result2 = results[1]+'\t'+word[3]+'\t'+word[4]+'\t'+word[6]
-                            with open(frmt_path,'a') as file4:
-                                file4.write(result2+'\n')
-
-
-    def id_map(self, file_id, frmt):        
-        with open(d_id_map_path, 'w') as file2:
-            with open(file_id, 'r') as file_id_name:
-                for line in file_id_name:
-                    line=line.split()
-                    with open(frmt, 'r') as fr:
-                        for f in fr:
-                            f=f.split()
-                            if len(line)>2:
-                                if line[1]==f[0]:
-                                    result= line[0]+'\t'+line[1]+'\t'+line[2]+'\t'+f[1]+'\t'+f[2]+'\t'+f[3]
-                                    if result > str(0):
-                                        with open(d_id_map_path, 'a') as file2:
-                                            file2.write(result+'\n')
-
-
-    def pTMdata(self):
-
-        """Downloads UpiProt data as a raw txt file (uniprot_mod_raw.txt)"""
-        rsponse = urlopen('http://www.uniprot.org/uniprot/?query=yeast&fil=organism%3A%22Saccharomyces%20cerevisiae%20(strain%20ATCC%20204508%20%2F%20S288c)%20(Baker%27s%20yeast)%20%5B559292%5D%22&sort=score&format=gff&columns=id,feature(MODIFIED%20RESIDUE)')
-        page = rsponse.read()
-        fil = open(uniprot_mod_raw_path,'wb')
-        fil.write(page)
-        fil.close()
+def pmap(yeastID_input, ptms_input, ptm_id_output):          
+    """Map UniProt IDs to protein names and post-translational modifications (PTMs).
     
+    Arguments:
+    yeastID_input -- dictionary, mapping UniProt ID to ordered locus and common (gene) names
+    ptms_input -- file path, mapping UniProt ID to a PTM and its position in polypeptide
+    ptm_id_output -- file path, mapping UniProt ID, ordered locus name, common name, PTM position and PTM 
+    """
+    lines = [] 
+    with open(ptms_input, 'r') as ptms:
+        for line in ptms:
+            uniprot_id, ptm_pos, modification = line.rstrip('\n').split('\t')
+            for common_name, sgd_name in yeastID_input[uniprot_id]:
+                new_line = [uniprot_id, sgd_name, common_name, ptm_pos, modification]
+                new_line = '\t'.join(new_line) + '\n'
+                lines.append(new_line)
+    with open(ptm_id_output, 'w') as ptm_id:
+        ptm_id.writelines(lines)
+                                         
+#TODO: Still don't like this implementation, but it's ok, I guess
+def ptm_map(mut_prot_input, ptm_id_input, mapped_ptms_output, summary_output):
+    """Map the positions of mutations in mutated proteins to post-translational modifications (PTMs).
     
-    def clean(self, UniProt_file):              
-        
-        """ cleans file uniprot_mod_raw.txt into a tab separated PTMs.txt
-        """
-
-        with open(PTMs_path, 'w') as out:
-            with open(UniProt_file,'rU') as UniProt_file_name:
-                for l in UniProt_file_name:
-                    if not l.startswith('##'):
-                        line = l.split()
-                        if line[2] == 'Lipidation':
-                            lll = line[0]+'\t'+line[4]+'\t'+line[8]
-                            ll = lll.split()
-                            ll = ll[2].split('=')
-                            p = line[0]+'\t'+line[4]+'\t'+ll[1]
-                            if p > str(0):
-                                out = open(PTMs_path, 'a')
-                                out.write(p+'\n')
-                                continue
-                        if line[2] == 'Glycosylation':
-                            ggg = line[0]+'\t'+line[4]+'\t'+line[8]
-                            gg = ggg.split()
-                            gg =  gg[2].split('=')
-                            p1 = line[0]+'\t'+line[4]+'\t'+gg[1]
-                            if p1 > str(0):
-                                out = open(PTMs_path, 'a+')
-                                out.write(p1+'\n')
-                                continue
-                        if line[2] == 'Modified':
-                            mmm = line[0]+'\t'+line[4]+'\t'+line[9]
-                            mm = mmm.split()
-                            mm = mm[2].split('=')
-                            mm = mm[1].split(';')
-                            p2 = line[0]+'\t'+line[4]+'\t'+mm[0]
-                            if p2 > str(0):
-                                out = open(PTMs_path, 'a+')
-                                out.write(p2+'\n')
-                                continue
-                        if line[2] == 'Cross-link': #ubiquitination
-                            ccc = line[0]+'\t'+line[4]+'\t'+line[8]
-                            cc = ccc.split()
-                            cc = cc[2].split('=')
-                            p3 = line[0]+'\t'+line[4]+'\t'+cc[1]
-                            if p3 > str(0):
-                                with open(PTMs_path, 'a+') as out:
-                                    out.write(p3+'\n')
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    ptm_id_input -- file path, mapping UniProt ID, ordered locus name, common name, PTM position and PTM
+    mapped_ptms_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name, PTM position and PTM
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_ptms_lines = []
+    summary_lines = []
+    with open(ptm_id_input, 'r') as ptms:
+        for line in ptms:
+            uniprot_id, sgd_name, common_name, ptm_pos, ptm = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name:
+                    for mut_pos in mutated_positions:
+                        if mut_pos == ptm_pos:
+                            mapped_ptm_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_pos, ptm, 'UniProt']) + '\n'
+                            summary_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_pos, ptm, 'PTMs', 'UniProt']) + '\n'
+                            mapped_ptms_lines.append(mapped_ptm_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_ptms_output, 'w') as mapped_ptms:
+        mapped_ptms.writelines(mapped_ptms_lines)
+    with open(summary_output, 'a') as summary:
+        summary.writelines(summary_lines)
 
 
-    def iD(self):
-
-        """ This method retrieves the different ID types for maping """
-        rsponse = urlopen('http://www.uniprot.org/uniprot/?query=yeast&fil=organism%3A%22Saccharomyces%20cerevisiae%20(strain%20ATCC%20204508%20%2F%20S288c)%20(Baker%27s%20yeast)%20%5B559292%5D%22&sort=score&format=tab&columns=id,genes(OLN),%2Cgenes(PREFERRED)')
-        page1 = rsponse.read()
-        file_1 =open(yeastID_path,'wb')  
-        file_1.write(page1)
-        file_1.close()
-        
+#TODO Find out how important PROSITE references are? What are they used for?
+def make_domains_file(uniprot_input, domains_output): 
+    """Extract domain data from a downloaded UniProt file and write to tab-delimited (tsv) file."""
+    annotation_regex = re.compile(r'Note=(.*?)(;|$)') # Alternation needed for entries that only contain a "Note" in the attribute string (see below)
+    prosite_regex = re.compile(r'PROSITE(.*?)(\||$)') # Note: sometimes 'PROSITE:' and sometimes 'PROSITE-ProRule:' (Only last entry 'E9PAE3' apparently)
+    lines = []
+    with open(uniprot_input, 'r') as uniprot:
+        for line in uniprot:
+            if not line.startswith('##'): #TODO: Decide whether this implementation is better than "if line.startswith('##'): continue"
+                uniprot_id, source, feature, start, end, score, strand, frame, attribute = line.rstrip().split('\t')
+                if feature == 'Domain':
+                    domain = annotation_regex.match(attribute).group(1) #TODO: Check whether this is actually a domain name or if it is the common name of the protein
+                    prosite_ref = ''
+                    prosites_matched = prosite_regex.finditer(attribute) # Find all PROSITE references in the attribute column (sometimes there are more than one)
+                    for prosite_match in prosites_matched:
+                        prosite_ref += prosite_match.group() #TODO: Is this what we want or do we only want group(1) e.g. something like 'PRU00457'
+                    prosite_ref = prosite_ref.rstrip('|')
+                    new_line = '\t'.join([uniprot_id, start, end, domain, prosite_ref]) + '\n'
+                    lines.append(new_line)
+    with open(domains_output, 'w') as domains:
+        domains.writelines(lines)
             
-    def pmap(self, file_id, file_PTMs):          
 
-        """ if proteins ids are not SDG or uniprot or common names, this method maps the ids 
-        """
-        with open(PTM_id_file_path, 'w') as file3:
-            with open(file_id, 'r') as file_id_name:
-                for lin in file_id_name:
-                    line = lin.split()
-                    with open(file_PTMs) as ptms:
-                        for i in ptms:
-                            i = i.split()
-                            if len(line) > 2:
-                                if line[0] == i[0]:
-                                    result3 = line[0]+'\t'+line[1]+'\t'+line[2]+'\t'+i[1]+'\t'+i[2]
-                                    if result3 > str(0):
-                                        file3 = open(PTM_id_file_path, 'a')
-                                        file3.write(result3+'\n')
-                                             
-
-    def ptm_map(self, mutation_file, PTM_id_file):
-
-        """ This method maps the overlap between mutated codons from previous method to the PTM sites"""
-        summary = open('summary.txt', 'w')
-        with open('mutated_proteins.txt', 'w') as file5:
-            with open(mutation_file, 'rU') as mutation_file:
-                for line in mutation_file:
-                    line = line.split()
-                    with open(PTM_id_file, 'r') as file_PTMs:
-                        for line1 in file_PTMs:
-                            line1 = line1.split()
-                            if line[0] == line1[2] and line[1] == line1[3]:
-                                take = line1[0]+'\t'+line1[1]+'\t'+line[0]+'\t'+line[1]+'\t'+line1[4]+'\t'+'UniProt'
-                                if take > str(0):
-                                    file5 = open('mutated_proteins.txt', 'a')
-                                    summary = open('summary.txt', 'a')
-                                    file5.write(take+'\n')
-                                    summary.write(line1[0]+'\t'+line[0]+'\t'+line[1]+'\t'+line1[4]+'\t'+'PTMs'+'\t'+'UniProt'+'\n')
-
-
-    def dclean(self, uniprot_mod_raw):  
-
-        """domain data needed to be filters from UniProt file, before mapping domains"""
-
-        with open(domains_path, 'w') as domain:
-            with open(uniprot_mod_raw, 'rU') as raw:
-                for a in raw:
-                    if not a.startswith('##'):
-                        a = a.split('=')
-                        a1 = a[0].split()
-                        if a1[2] == 'Domain':
-                            if len(a) == 2:
-                                a2 = a[1].rstrip()
-                                take = a1[0]+'\t'+a1[3]+'\t'+a1[4]+'\t'+a2+'\n'
-                                if take > str(0):
-                                    with open(domains_path, 'a') as domain:
-                                        domain.write(take)
-                                        continue
-                            if len(a) == 4:
-                                a3 = a[1].rstrip().split(';')
-                                a4 = a[3].rstrip().split('|')
-                            if len(a4) > 1:
-                                take2 = a1[0]+'\t'+a1[3]+'\t'+a1[4]+'\t'+a3[0]+'\t'+a4[1]+'\n'
-                                if take2 > str(0):
-                                    with open(domains_path, 'a+') as domain:
-                                        domain.write(take2)
-                            if len(a4) == 1:
-                                take3 = a1[0]+'\t'+a1[3]+'\t'+a1[4]+'\t'+a4[0]+'\n'
-                                if take3 > str(0):
-                                    with open(domains_path, 'a+') as domain:
-                                        domain.write(take3)
-                
+def d_map(yeastID_input, domains_input, domain_id_output):
+    """Map UniProt IDs to protein names and domains and PROSITE references
     
-    def d_map(self, yeast_id, domain):
+    Arguments:
+    yeastID_input -- dictionary, mapping UniProt ID to ordered locus and common (gene) names
+    domains_input -- file path, mapping UniProt ID to domains, their start and end positions in the polypeptide and PROSITE references 
+    domain_id_output -- file path, mapping UniProt ID, ordered locus name, common name, and domain data 
+    """
+    lines = [] 
+    with open(domains_input, 'r') as domains:
+        for line in domains:
+            uniprot_id, start, end, domain, prosite_ref = line.rstrip('\n').split('\t')
+            for common_name, sgd_name in yeastID_input[uniprot_id]:
+                new_line = [uniprot_id, sgd_name, common_name, start, end, domain, prosite_ref]
+                new_line = '\t'.join(new_line) + '\n'
+                lines.append(new_line)
+    with open(domain_id_output, 'w') as domain_id:
+        domain_id.writelines(lines)
 
-        """ maps the different proteins ids to domains"""
+
+def dmap(mut_prot_input, domain_id_input, mapped_domains_output, summary_output):
+    """Map the positions of mutations in mutated proteins to domains.
+    
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    domain_id_input -- file path, mapping UniProt ID, ordered locus name, common name, domain position (start and end) and domain name
+    mapped_domains_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name, domain position and domain name
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_domains_lines = []
+    summary_lines = []
+    with open(domain_id_input, 'r') as domains:
+        for line in domains:
+            uniprot_id, sgd_name, common_name, domain_start, domain_end, domain_name, prosite_ref = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name:
+                    for mut_pos in mutated_positions:
+                        if int(domain_start) <= int(mut_pos) <= int(domain_end): # Check if the mutation lies in a domain of the mutated protein
+                            mapped_domain_line = '\t'.join([uniprot_id, sgd_name, common_name, domain_start, mut_pos, domain_end, domain_name, prosite_ref, 'UniProt']) + '\n'
+                            summary_line = '\t'.join([uniprot_id, sgd_name, common_name, domain_start, mut_pos, domain_end, domain_name, prosite_ref, 'Domains', 'UniProt']) + '\n'
+                            mapped_domains_lines.append(mapped_domain_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_domains_output, 'w') as mapped_domains:
+        mapped_domains.writelines(mapped_domains_lines)
+    with open(summary_output, 'a') as summary:
+        summary.writelines(summary_lines)
+
+#TODO: The bottleneck in the program is the GO enrichment analysis. We have only a 9 genes in the test file 'mapped_domains.txt' and it takes 
+# between 14s and 20s to perform the enrichment and about the same time to load the ontology and annotations.
+# Perhaps we should have an option on the website where the user can select whether or not they want to perform GO enrichment.
+def enrich(mapped_mut_input):
+    """Perform Gene Ontology (GO) enrichment on a set of genes (obtained from the second column of an tab-delimited input file).
+    
+    Write the results of the enrichment to a file. If a GO term has been found to be overrepresented, then its ID, name, the 
+    significance of the enrichment (for further details on how p-value is calculated see ?????????????), a list of the genes 
+    in the gene set that are annotated with the enriched GO term, and a reference count (???????) are written as a line in 
+    the file.
+    """
+    lines = []
+    p_value_output = os.path.join(os.path.dirname(mapped_mut_input), p_value_file)
+    with open(mapped_mut_input, 'r') as mapped_mutations:
+        sgd_gene_names = [line.split('\t')[1] for line in mapped_mutations]
+    enriched_go_terms = annotations.get_enriched_terms(sgd_gene_names)
+    if len(enriched_go_terms) == 0:
+        line = 'No enriched GO terms found.'
+        lines.append(line)
+    else:
+        for go_id, (genes, p_value, ref) in enriched_go_terms.items(): #TODO: Find out what the reference count is
+            if p_value < 0.05:
+                term = ontology[go_id]
+                formatted_p_value = '%.2E' % p_value
+                genes = ', '.join(genes)
+                line_elements = [term.id, term.name, formatted_p_value, genes, str(ref)]
+                line = '\t'.join(line_elements) + '\n'
+                lines.append(line)
+        if len(lines) == 0:
+            line = 'No significantly enriched GO terms found.'
+            lines.append(line)
+    with open(p_value_output, 'w') as out:
+        out.writelines(lines)
+                           
+
+
+def make_bact_file(uniprot_input, bact_output):
+    """Extract binding site and active site data from a downloaded UniProt file and write to tab-delimited (tsv) file."""
+    annotation_regex = re.compile(r'Note=(.*?)(;|$)') # Alternation needed for entries that only contain a "Note" in the attribute string (see below)
+    lines = []
+    with open(uniprot_input, 'r') as uniprot:
+        for line in uniprot:
+            if not line.startswith('##'):
+                uniprot_id, source, feature, start, end, score, strand, frame, attribute = line.rstrip().split('\t')
+                if feature in ('Binding site', 'Active site'):
+                    match = annotation_regex.match(attribute) # Only need to search for regex at the beginning of the string
+                    binds_or_activity = match.group(1) if match else ''
+                    new_line = '\t'.join([uniprot_id, feature, start, binds_or_activity]) + '\n'
+                    lines.append(new_line)
+    with open(bact_output, 'w') as bact:
+        bact.writelines(lines)
+                        
+                         
+def id(yeastID_input, bact_input, sites_id_output): 
+    """Map UniProt IDs to protein names and binding sites and active sites.
+    
+    Arguments:
+    yeastID_input -- dictionary, mapping UniProt ID to ordered locus and common (gene) names
+    bact_input -- file path, mapping UniProt ID to binding sites and active site, their position in the polypeptide and their binding partner/activity
+    sites_id_output -- file path, mapping UniProt ID, ordered locus name, common name, and binding/active site data
+    """
+    lines = [] 
+    with open(bact_input, 'r') as bact:
+        for line in bact:
+            uniprot_id, feature, position, binds_or_activity = line.rstrip('\n').split('\t')
+            for common_name, sgd_name in yeastID_input[uniprot_id]:
+                new_line = [uniprot_id, sgd_name, common_name, feature, position, binds_or_activity]
+                new_line = '\t'.join(new_line) + '\n'
+                lines.append(new_line)
+    with open(sites_id_output, 'w') as sites_id:
+        sites_id.writelines(lines)
+
+
+def mmap(mut_prot_input, sites_id_input, mapped_sites_output, summary_output):
+    """Map the positions of mutations in mutated proteins to binding sites and active sites.
+    
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    sites_id_input -- file path, mapping UniProt ID, ordered locus name, common name, binding/active site, their position and binding partner/activity 
+    mapped_sites_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name, binding/active site data
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_sites_lines = []
+    summary_lines = []
+    with open(sites_id_input, 'r') as sites:
+        for line in sites:
+            uniprot_id, sgd_name, common_name, feature, bact_pos, binds_or_activity = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name:
+                    for mut_pos in mutated_positions:
+                        if mut_pos == bact_pos: # Check if the mutation coincides with the position of a binding/active site
+                            mapped_sites_line = '\t'.join([uniprot_id, sgd_name, common_name, feature, mut_pos, binds_or_activity, 'UniProt']) + '\n'
+                            summary_line = '\t'.join([uniprot_id, sgd_name, common_name, feature, mut_pos, binds_or_activity, 'Active/Binding sites', 'UniProt']) + '\n'
+                            mapped_sites_lines.append(mapped_sites_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_sites_output, 'w') as mapped_sites:
+        mapped_sites.writelines(mapped_sites_lines)
+    with open(summary_output, 'a') as summary:
+        summary.writelines(summary_lines)
+
+
+def make_nucleotide_file(uniprot_input, nucleotide_output):
+    """Extract nucleotide binding site data from a downloaded UniProt file and write to tab-delimited (tsv) file."""
+    annotation_regex = re.compile(r'Note=(.*?)(;|$)') # Alternation needed for entries that only contain a "Note" in the attribute string (see below)
+    lines = []
+    with open(uniprot_input, 'r') as uniprot:
+        for line in uniprot:
+            if not line.startswith('##'):
+                uniprot_id, source, feature, start, end, score, strand, frame, attribute = line.rstrip().split('\t')
+                if feature == 'Nucleotide binding':
+                    match = annotation_regex.match(attribute) # Only need to search for regex at the beginning of the string
+                    binding_nucleotide = match.group(1) if match else ''
+                    new_line = '\t'.join([uniprot_id, feature, start, end, binding_nucleotide]) + '\n'
+                    lines.append(new_line)
+    with open(nucleotide_output, 'w') as nucleotide:
+        nucleotide.writelines(lines)
+
+
+def n_map(yeastID_input, nucleotide_input, nucleotide_id_output): 
+    """Map UniProt IDs to protein names and nucleotide binding sites.
+    
+    Arguments:
+    yeastID_input -- dictionary, mapping UniProt ID to ordered locus and common (gene) names
+    nucleotide_input -- file path, mapping UniProt ID to nucleotide binding sites, their position (start and end) in the polypeptide and their binding nucleotide
+    nucleotide_id_output -- file path, mapping UniProt ID, ordered locus name, common name, and nucleotide binding site data
+    """
+    lines = [] 
+    with open(nucleotide_input, 'r') as nucleotide:
+        for line in nucleotide:
+            uniprot_id, feature, start, end, binding_nucleotide = line.rstrip('\n').split('\t')
+            for common_name, sgd_name in yeastID_input[uniprot_id]:
+                new_line = [uniprot_id, sgd_name, common_name, feature, start, end, binding_nucleotide]
+                new_line = '\t'.join(new_line) + '\n'
+                lines.append(new_line)
+    with open(nucleotide_id_output, 'w') as nucleotide_id:
+        nucleotide_id.writelines(lines)
+
+
+def nucleotide_map(mut_prot_input, nucleotide_id_input, mapped_nucleotide_output, summary_output):
+    """Map the positions of mutations in mutated proteins to nucleotide binding sites.
+    
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    nucleotide_id_input -- file path, mapping UniProt ID, ordered locus name, common name, the start and end position of nucleotide binding sites and the binding nucleotide
+    mapped_nucleotide_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name, nucleotide binding site data
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_nucleotide_lines = []
+    summary_lines = []
+    with open(nucleotide_id_input, 'r') as sites:
+        for line in sites:
+            uniprot_id, sgd_name, common_name, feature, nuc_bind_start, nuc_bind_end, binding_nucleotide = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name:
+                    for mut_pos in mutated_positions:
+                        if int(nuc_bind_start) <= int(mut_pos) <= int(nuc_bind_end): # Check if the mutation coincides with the position of a binding/active site
+                            mapped_sites_line = '\t'.join([uniprot_id, sgd_name, common_name, feature, nuc_bind_start, mut_pos, nuc_bind_end, binding_nucleotide, 'UniProt']) + '\n'
+                            summary_line = '\t'.join([uniprot_id, sgd_name, common_name, feature, nuc_bind_start, mut_pos, nuc_bind_end, binding_nucleotide, 'Nucleotide binding sites', 'UniProt']) + '\n'
+                            mapped_nucleotide_lines.append(mapped_sites_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_nucleotide_output, 'w') as mapped_nucleotides:
+        mapped_nucleotides.writelines(mapped_nucleotide_lines)
+    with open(summary_output, 'a') as summary:
+        summary.writelines(summary_lines)
+
+
+def bioGrid(uniprot_biogrid_output):
+    """Download a list of UniProt IDs and their associated BioGrid IDs."""
+    #TODO: Make the uniprot URL cleaner/more understandable. See http://www.uniprot.org/help/api_queries
+    uniprot = urlopen('http://www.uniprot.org/uniprot/?query=yeast&fil=organism%3A%22Saccharomyces%20cerevisiae%20(strain%20ATCC%20204508%20%2F%20S288c)%20(Baker%27s%20yeast)%20%5B559292%5D%22&sort=score&format=tab&columns=id,database(BioGrid)')
+    with open(uniprot_biogrid_output,'wb') as output_file:
+        output_file.write(uniprot.read())
+
         
-        with open(id_domain_path,'w') as id_domain:
-            with open(yeast_id, 'rU') as fl:
-                for f in fl:
-                    f = f.split()
-                    with open(domain,'r') as dp:
-                        for d in dp:
-                            d = d.split()
-                            if len(f) > 2 and f[0] == d[0]:
-                                if len(d) == 4:
-                                    take = d[0]+'\t'+f[1]+'\t'+f[2]+'\t'+d[1]+'\t'+d[2]+'\t'+d[3]+'\n'
-                                    if take > str(0):
-                                        with open(id_domain_path,'a') as id_domain:
-                                            id_domain.write(take)
-                                if len(d) == 5:
-                                    take1 = d[0]+'\t'+f[1]+'\t'+f[2]+'\t'+d[1]+'\t'+d[2]+'\t'+d[3]+'\t'+d[4]+'\n'
-                                    if take1 > str(0):
-                                        with open(id_domain_path,'a+') as id_domain:
-                                            id_domain.write(take1)
-                                if len(d) == 6:
-                                    take2 = d[0]+'\t'+f[1]+'\t'+f[2]+'\t'+d[1]+'\t'+d[2]+'\t'+d[3]+'\t'+d[4]+'\t'+d[5]+'\n'
-                                    if take2 > str(0):
-                                        with open(id_domain_path,'a+') as id_domain:
-                                            id_domain.write(take2)
-                                if len(d) == 7:
-                                    take3 = d[0]+'\t'+f[1]+'\t'+f[2]+'\t'+d[1]+'\t'+d[2]+'\t'+d[3]+'\t'+d[4]+'\t'+d[5]+'\t'+d[6]+'\n'
-                                    if take3 > str(0):
-                                        with open(id_domain_path,'a+') as id_domain:
-                                            id_domain.write(take3)
-                                if len(d) == 8:
-                                    take4 = d[0]+'\t'+f[1]+'\t'+f[2]+'\t'+d[1]+'\t'+d[2]+'\t'+d[3]+'\t'+d[4]+'\t'+d[5]+'\t'+d[6]+'\t'+d[7]+'\n'
-                                    if take4 > str(0):
-                                        with open(id_domain_path,'a+') as id_domain:
-                                            id_domain.write(take4)
-
-
-    def dmap(self, file1, file2):
-
-        """ maps mutations to the yeast domains"""
-        
-        with open('domains_mapped.txt', 'w') as mp:
-            with open('summary.txt', 'a+') as summary:
-                with open(file1,'rU') as f:
-                    for line in f:
-                        line1=line.split()
-                        with open(file2, 'r') as f2:
-                            for line2 in f2:
-                                line2 = line2.split()
-                                if line1[0] == line2[2]:
-                                    try:
-                                        if line1[1] == 'Error:':
-                                            with open('domains_mapped.txt', 'a') as mp:
-                                                mp.write("input file contains error position for" +line1[0]+ "this protein"+'\n')
-                                                continue
-                                        if int(line1[1]) >= int(line2[3]) and int(line1[1]) <= int(line2[4]):
-                                            if len(line2) == 6:
-                                                take = line2[0]+'\t'+line1[0]+'\t'+line2[3]+'\t'+line1[1]+'\t'+line2[4]+'\t'+line2[5]+'\t'+'UniProt'+'\n'
-                                                if take > str(0):
-                                                    with open('domains_mapped.txt', 'a+') as mp:
-                                                        mp.write(take)
-                                                        summary.write(line2[0]+'\t'+line1[0]+'\t'+line1[1]+'\t'+line2[5]+'\t'+'domain'+'\t'+'UniProt'+'\n')
-                                            if  len(line2) == 7:
-                                                take1 = line2[0]+'\t'+line1[0]+'\t'+line2[3]+'\t'+line1[1]+'\t'+line2[4]+'\t'+line2[5]+'\t'+line2[6]+'UniProt'+'\n'
-                                                if take1 > str(0):
-                                                    with open('domains_mapped.txt', 'a+') as mp:
-                                                        mp.write(take1)
-                                                        summary.write(line2[0]+'\t'+line1[0]+'\t'+line1[1]+'\t'+line2[5]+'\t'+line2[6]+'domain'+'\t'+'UniProt'+'\n')
-                                            if  len(line2) == 8:
-                                                take2 = line2[0]+'\t'+line1[0]+'\t'+line2[3]+'\t'+line1[1]+'\t'+line2[4]+'\t'+line2[5]+'\t'+line2[6]+'\t'+line2[7]+'UniProt'+'\n'
-                                                if take2 > str(0):
-                                                    with open('domains_mapped.txt', 'a+') as mp:
-                                                        mp.write(take2)
-                                                        summary.write(line2[0]+'\t'+line1[0]+'\t'+line1[1]+'\t'+line2[5]+'\t'+line2[6]+'\t'+line2[7]+'domain'+'\t'+'UniProt'+'\n')
-                                            if  len(line2) == 9:
-                                                take3 = line2[0]+'\t'+line1[0]+'\t'+line2[3]+'\t'+line1[1]+'\t'+line2[4]+'\t'+line2[5]+'\t'+line2[6]+'\t'+line2[7]+'\t'+line2[8]+'UniProt'+'\n'
-                                                if take3 > str(0):
-                                                    with open('domains_mapped.txt', 'a+') as mp:
-                                                        mp.write(take3)
-                                                        summary.write(line2[0]+'\t'+line1[0]+'\t'+line1[1]+'\t'+line2[5]+'\t'+line2[6]+'\t'+line2[7]+'\t'+line2[8]+'domain'+'\t'+'UniProt'+'\n')
-                                            if  len(line2) == 10:
-                                                take4 = line2[0]+'\t'+line1[0]+'\t'+line2[3]+'\t'+line1[1]+'\t'+line2[4]+'\t'+line2[5]+'\t'+line2[6]+'\t'+line2[7]+'\t'+line2[8]+'\t'+line2[9]+'UniProt'+'\n'
-                                                if take4 > str(0):
-                                                    with open('domains_mapped.txt', 'a+') as mp:
-                                                        mp.write(take4)
-                                                        summary.write(line2[0]+'\t'+line1[0]+'\t'+line1[1]+'\t'+line2[5]+'\t'+line2[6]+'\t'+line2[7]+'\t'+line2[8]+'\t'+line2[9]+'domain'+'\t'+'UniProt'+'\n')
-                                    except IndexError:
-                                        pass
+def preWeb(uniprot_biogrid_input, mapped_mut_input):
+    """Map mutations to BioGrid IDs and write to file.
     
-    def enrich(self, file1):
-
-        """ This method performed enrichment analysis of mutated proteins and
-        return the p value of functional enrichment of mutated proteins functional regions/residues; 
-        see main text for how pvalue is calculated"""
-        k = []
-        with open('pvalue.txt','w') as out:
-            with open(file1, 'rU') as f:
-                k = [(line.split())[1] for line in f]
-                res = annotations.get_enriched_terms(k)
-                if len(res) == 0:
-                    with open('pvalue.txt','a') as out:
-                        out.write('No enrichment found')
-                else:
-                    for go_id, (genes, p_value, ref) in list(res.items()):
-                        if p_value < 0.05 and len(genes) >= 2:
-                            with open('pvalue.txt','a+') as out:
-                                out.write(ontology[go_id].name + '\t'+ '%.2E' %Decimal(p_value) + '\t'+",".join(genes) +'\t'+ str(ref) +'\n')
-                               
+    Arguments:
+    uniprot_biogrid_input -- dictionary, mapping UniProt IDs to BioGrid IDs
+    mapped_mut_input -- file path, mutations mapped to features
+    """
+    biog_output = os.path.join(os.path.dirname(mapped_mut_input), biog_file) 
+    lines = []
+    with open(mapped_mut_input, 'r') as mapped_mutations:
+        for line in mapped_mutations:
+            uniprot_id = line.split('\t')[0] # Assumes first column is UniProt ID
+            for biogrid_id in uniprot_biogrid_input[uniprot_id]:
+                line = [uniprot_id, biogrid_id, 'UniProt'] #TODO: Is it necessary to include UniProt at the end of each line?
+                line = '\t'.join(line) + '\n'
+                lines.append(line)
+    with open(biog_output, 'w') as biog:
+        biog.writelines(lines)
 
 
-    def ab(self, file_raw): 
-
-        """Prepares raw Uniprot data for yeast active and binding sites mutation analysis"""
-
-        with open(bact_path,'w') as file2:
-            with open(file_raw, 'rU') as d:
-                for f in d:
-                    if not f.startswith('##'):
-                        f = f.split()
-                        if f[2] == 'Active':
-                            take = f[0]+'\t'+f[2]+'\t'+f[4]
-                            if take > str(0):
-                                with open(bact_path,'a') as file2:
-                                    file2.write(take+'\n')
-                        if f[2] == 'Binding':
-                            take2 = f[0]+'\t'+f[2]+'\t'+f[4]
-                            if take2 > str(0):
-                                with open(bact_path,'a+') as file2:
-                                    file2.write(take2+'\n')
-                            
-                             
-    def id(self, act, yeast_id): 
-
-        """ maps proteins ids to active and binding sites containing proteins"""
-
-        with open(sites_id_path, 'w') as file_id:
-            with open(act, 'rU') as a:
-                for a in a:
-                    a = a.split()
-                    with open(yeastID_path)as id:
-                        for i in id:
-                            i = i.split()
-                            if len(i) > 2:
-                                if a[0] == i[0]:
-                                    take = i[2]+'\t'+i[1]+'\t'+i[0]+'\t'+a[1]+'\t'+a[2]
-                                    if take > str(0):
-                                        with open(sites_id_path, 'a') as file_id:
-                                            file_id.write(take+'\n')
+def bweb(biog_input): 
+    """For each BioGrid ID in biog_input, open the corresponding BioGrid database entry in web browser (one tab per entry).""" 
+    url = 'http://thebiogrid.org/'
+    biog = open(biog_input, 'r')
+    for line in biog:
+        biog_id = line.split('\t')[1] # Assumes BioGrid ID is in second column of input file
+        webbrowser.open(url + biog_id)
 
 
-    def mmap(self, file_sites, mutation):
-
-        """ maps mutations to proteins ab (active and binding sites) """ 
-
-        with open('ab_mutation_file.txt', 'w') as out: 
-            with open(file_sites, 'rU') as s:
-                for a in s:
-                    a = a.split()
-                    with open(mutation, 'r') as mu:
-                        for m in mu:
-                            m = m.split()
-                            if a[0] == m[0] and a[4] == m[1]:
-                                take = a[2]+'\t'+ a[3]+'\t'+m[1]+'\t'+'UniProt'
-                                if take > str(0):
-                                    with open('ab_mutation_file.txt', 'a') as out: 
-                                        summary = open('summary.txt', 'a+')
-                                        out.write(take+'\n')
-                                        summary.write(a[2]+'\t'+a[0]+'\t'+m[1]+'\t'+ a[3]+'\t'+'Active/Binding site'+'\t'+'UniProt'+'\n')
+def make_pdb_file(uniprot_input, pdb_output):
+    """Extract structural data from a downloaded UniProt file and write to tab-delimited (tsv) file."""
+    annotation_regex = re.compile(r'PDB:(.*?)(;|$)') # Alternation needed for entries that only contain a "Note" in the attribute string (see below)
+    lines = []
+    with open(uniprot_input, 'r') as uniprot:
+        for line in uniprot:
+            if not line.startswith('##'):
+                uniprot_id, source, feature, start, end, score, strand, frame, attribute = line.rstrip().split('\t')
+                if feature in ('Helix', 'Beta strand', 'Turn'):
+                    match = annotation_regex.search(attribute) # Need to search for regex everywhere in string
+                    pdb_id = match.group(1) if match else ''
+                    new_line = '\t'.join([uniprot_id, feature, start, end, pdb_id]) + '\n'
+                    lines.append(new_line)
+    with open(pdb_output, 'w') as pdb:
+        pdb.writelines(lines)
 
 
-    def nucleotide(self):
-
-        """ prepares the UniProt data for the nucleotide motifs mapping to mutations """
-
-        with open(nucleotide_path, 'w') as t:
-            with open(uniprot_mod_raw_path, 'rU') as file_raw:
-                for fi in file_raw:
-                    if not fi.startswith('##'):
-                        f = fi.split()
-                        if f[2] == 'Nucleotide' and len(f) > 8:
-                            take = f[0]+'\t'+f[2]+'\t'+f[4]+'\t'+f[5]+'\t'+f[9]
-                            take1 = take.split()
-                            take1 = take1[4].split(';')
-                            if take > str(0):
-                                with open(nucleotide_path, 'a') as t:
-                                    t.write(f[0]+'\t'+f[2]+'\t'+f[4]+'\t'+f[5]+'\t'+take1[0]+'\n')
-
-
-    def n_map(self, yeast_id, domain): 
-
-        """ maps different proteins ids to nucleotides data """
-
-        with open(id_nucleotide_path, 'w') as  id_domain:
-            with open(yeast_id, 'rU') as fl:
-                for fe in fl:
-                    f = fe.split()
-                    with open(domain,'r') as dp:
-                        for d in dp:
-                            d=d.split()
-                            if len(f)>2:
-                                if f[0]==d[0]:
-                                    take=d[0]+'\t'+f[1]+'\t'+f[2]+'\t'+d[1]+'\t'+d[2]+'\t'+d[3]+'\t'+d[4]
-                                    if take > str(0):
-                                        with open(id_nucleotide_path, 'a') as  id_domain:
-                                            id_domain.write(take+'\n')
-
-
-    def nucleotide_map(self, file1, file2):
-
-        """ maps mutations to protein-nucleotide binding motifs """
-        
-        with open('nucleotide_map.txt', 'w') as mp:
-            with open(file1,'rU') as f:
-                for line in f:
-                    line1 = line.split()
-                    with open(file2, 'r') as f2:
-                        for line2 in f2:
-                            line2 = line2.split()
-                            if line1[0] == line2[2]:
-                                try:
-                                    if line1[1] == 'Error:':
-                                        with open('nucleotide_map.txt', 'a') as mp:
-                                            mp.write("input file contains error position for" + line1[0]+"protein"+'\n')
-                                            continue
-                                    if int(line1[1]) >= int(line2[4]) and int(line1[1]) <= int(line2[5]):
-                                        take = line2[0]+'\t'+line1[0]+'\t'+line2[4]+'\t'+line1[1]+'\t'+line2[4]+'\t'+line2[6]+'\t'+'UniProt'
-                                        if take > str(0):
-                                            with open('nucleotide_map.txt', 'a') as mp:
-                                                summary = open('summary.txt', 'a+')
-                                                mp.write(take+'\n')
-                                                summary.write(line2[0]+'\t'+line1[0]+'\t'+line1[1]+'\t'+line2[4]+'\t'+'Nucleotide-Binding'+'\t'+'UniProt'+'\n')
-                                except IndexError:
-                                    pass
-
-
-    def bioGrid(self):
-
-        """ Downloads BioGrid ids of yeast proteins from UniProt for further processing including mapping and web browsing
-        WARNING: requires powerful machines to work with as its expensive to open in machines with low memory
-        """
-        response = urlopen('http://www.uniprot.org/uniprot/?query=yeast&fil=organism%3A%22Saccharomyces%20cerevisiae%20(strain%20ATCC%20204508%20%2F%20S288c)%20(Baker%27s%20yeast)%20%5B559292%5D%22&sort=score&format=tab&columns=id,database(BioGrid)')
-        page = response.read()
-        file1 = open(uniprot_bioGrid_path,'wb')
-        file1.write(page)
-        file1.close()
+def mu_map(yeastID_input, struct_input, struct_id_output):
+    """Map UniProt IDs to protein names and structural elements (helices, beta strands, turns).
     
-
-    def preWeb(self, file1, mutation ): 
-
-        """ maps mutations to BioGrid ids """ 
-
-        with open('biog.txt', 'w') as out:
-            with open(file1, 'rU') as fl:
-                for f in fl:
-                    f = f.rstrip().split()
-                    if len(f) > 1:
-                        i = f[1].split(';')
-                        take = f[0]+'\t'+i[0]
-                        take = take.split()
-                        with open(mutation, 'r') as pro:
-                            for p in pro:
-                                p = p.split()
-                                if take[0] == p[0]:
-                                    take2 = take[0]+'\t'+take[1]+'\t'+'UniProt'
-                                    if take2 > str(0):
-                                        with open('biog.txt', 'a') as out:
-                                            out.write(take2+'\n')
+    Arguments:
+    yeastID_input -- dictionary, mapping UniProt ID to ordered locus and common (gene) names
+    struct_input -- file path, mapping UniProt ID to PDB ID, structural elements (helices, beta strands, turns) and their position (start and end) in the polypeptide
+    struct_id_output -- file path, mapping UniProt ID, ordered locus name, common name, and structural data
+    """
+    lines = [] 
+    with open(struct_input, 'r') as struct:
+        for line in struct:
+            uniprot_id, feature, start, end, pdb_id = line.rstrip('\n').split('\t')
+            for common_name, sgd_name in yeastID_input[uniprot_id]:
+                new_line = [uniprot_id, sgd_name, common_name, feature, start, end, pdb_id]
+                new_line = '\t'.join(new_line) + '\n'
+                lines.append(new_line)
+    with open(struct_id_output, 'w') as struct_id:
+        struct_id.writelines(lines)
 
 
-    def bweb(self, file1): 
-
-        """ opens the BioGrid db in browser with as many tabs as mutated proteins""" 
-
-        url = 'http://thebiogrid.org/'
-        fl = open(file1, 'rU')
-        for f in OrderedDict.fromkeys(fl):
-            f = f.split()
-            webbrowser.open(url + f[1])
-
-
-    def pdb_c(self, file_1):
-
-        """ Structure data filtration from UniProt"""
-
-        with open(pdb_path, 'w') as stru:
-            with open(file_1, 'rU') as raw:
-                for r in raw:
-                    if not r.startswith('##'):
-                        line = r.split()
-                        if line[2] == 'Beta' and len(line[9]) > 1:
-                            take = line[9].split('|')
-                            take3 = line[0]+'\t'+line[2]+'\t'+line[4]+'\t'+line[5]+'\t'+take[1]
-                            if take3 > str(0):
-                                with open(pdb_path, 'a') as stru:
-                                    stru.write(take3+'\n')
-                                    continue
-                        if len(line) > 7 and line[2] == 'Helix' or line[2]=='Turn':
-                            if len(line[8])>1:
-                                tak = line[8].split('|')
-                                tak3 = line[0]+'\t'+line[2]+'\t'+line[3]+'\t'+line[4]+'\t'+take[1]
-                                if tak3 > str(0):
-                                    with open(pdb_path, 'a+') as stru:
-                                        stru.write(tak3+'\n')
-
+def pdb(mut_prot_input, struct_id_input, mapped_struct_output, summary_output):
+    """Map the positions of mutations in mutated proteins to structural elements (helices, beta strands, turns).
     
-    def mu_map(self):
-
-        """ mutations proteins mapped to the yeastID file"""
-
-        with open('mutation_id.txt', 'w') as f:
-            with open(protein_input_file) as mutation_file:
-                for a in mutation_file:
-                    a = a.split()
-                    with open(yeastID_path) as id:
-                        for i in id:
-                            i = i.split()
-                            if len(i) > 2:
-                                if a[0] == i[2]:
-                                    take = i[0]+'\t'+i[1]+'\t'+i[2]+'\t'+a[1]
-                                    if take > str(0):
-                                        with open('mutation_id.txt', 'a') as f:
-                                            f.write(take+'\n')
-
-
-    def pdb(self, file_pdb):
-
-        """ This code maps mutations to the proteins structural regions"""
-
-        with open('stru_mutation.txt', 'w') as s:
-            with open(file_pdb, 'rU') as raw:
-                for i in raw:
-                    i = i.split()
-                    with open('mutation_id.txt') as mu: 
-                        for m in mu:
-                            m = m.split()
-                            if i[0] == m[0]:
-                                try:
-                                    if m[3] == 'Error:':
-                                        with open('stru_mutation.txt', 'a') as s:
-                                            s.write("input file contains error position for" +m[2]+ "protein"+'\n')
-                                            continue
-                                    if int(i[2]) <= int(m[3]) and int(i[3]) >= int(m[3]):
-                                        take = m[0]+'\t'+m[1]+'\t'+m[2]+'\t'+i[1]+'\t'+i[2]+'\t'+m[3]+'\t'+i[3]+'\t'+i[4]+'\t'+'UniProt'
-                                        if take > str(0):
-                                            with open('stru_mutation.txt', 'a+') as s:
-                                                summary = open('summary.txt', 'a+')
-                                                s.write(take+'\n')
-                                                summary.write(m[0]+'\t'+m[2]+'\t'+m[3]+'\t'+i[4]+'\t'+i[1]+'\t'+'UniProt'+'\n')
-                                except IndexError:
-                                    pass
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    struct_id_input -- file path, mapping UniProt ID, ordered locus name, common name, PDB ID, and the start and end position of each structural element
+    mapped_struct_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name, nucleotide binding site data
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_struct_lines = []
+    summary_lines = []
+    with open(struct_id_input, 'r') as sites:
+        for line in sites:
+            uniprot_id, sgd_name, common_name, feature, struct_start, struct_end, pdb_id = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name:
+                    for mut_pos in mutated_positions:
+                        if int(struct_start) <= int(mut_pos) <= int(struct_end): # Check if the mutation coincides with the position of a binding/active site
+                            mapped_sites_line = '\t'.join([uniprot_id, sgd_name, common_name, feature, struct_start, mut_pos, struct_end, pdb_id, 'UniProt']) + '\n'
+                            summary_line = '\t'.join([uniprot_id, sgd_name, common_name, feature, struct_start, mut_pos, struct_end, pdb_id, 'Structural elements', 'UniProt']) + '\n'
+                            mapped_struct_lines.append(mapped_sites_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_struct_output, 'w') as mapped_nucleotides:
+        mapped_nucleotides.writelines(mapped_struct_lines)
+    with open(summary_output, 'a') as summary:
+        summary.writelines(summary_lines)
 
 
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -761,253 +954,333 @@ class YGtPM(object):
 #PTM types, present at interface  and/or ppi.
 
 
-def interface(file1, mutation):
-
-    """PTM present at the interface of two proteins and known to play role in interaction (Beltrao et al. Cell 2012)"""
+def interface_map(gene_names_by_locus, interface_sites_input, interface_id_output):
+    """Map UniProt IDs to protein names and PTMs at an interface that are known to affect interactions.
     
-    with open('interface_mutation.txt', 'w') as out:
-        with open(file1, 'rU') as f:
-            for l in f:
-                line = l.split()
-                if len(line) > 5:
-                    take = line[1]+'\t'+line[2]+'\t'+line[3]+'\t'+line[5]
-                    take = take.split()
-                    with open(mutation) as mu:
-                        for m in mu:
-                            m = m.split()
-                            if m[0] == take[1] and m[1] == take[2]:
-                                take2 = take[0]+'\t'+take[1]+'\t'+take[2]+'\t'+take[3]+'\t'+'PTMfunc'
-                                fi = take2.split()
-                                with open(yeastID_path) as id:
-                                    for di in id:
-                                        di = di.split()
-                                        if len(di) > 2 and di[2] == fi[1]:
-                                            summary = open('summary.txt', 'a+')
-                                            summary.write(di[0]+'\t'+di[2]+'\t'+fi[2]+'\t'+fi[3]+'\t'+'Interface'+'\t'+'PTMfunc'+'\n')
-                                            if take2 > str(0):
-                                                with open('interface_mutation.txt', 'a') as out:
-                                                    out.write(take2+'\n')
-                                                
+    See Beltrao et al. Cell 2012 for further details.
+    
+    Arguments:
+    gene_names_by_locus -- dictionary, key = locus_name, value = list of gene names
+    interface_sites_input -- file path, mapping locus name to PTMs, their position in a protein interface, the modified residue and the PFAM domain.
+    interface_id_output -- file path, mapping UniProt ID, ordered locus name, common name, and interface data
+    """
+    lines = []
+    with open(interface_sites_input, 'r') as interface_sites:
+        #TODO: Write a check for a header - perhaps specify parameter header=T, like some R functions (give user flexibility) 
+        next(interface_sites) # Skip the header
+        for line in interface_sites:
+            line = line.rstrip('\n')
+            if line == '': #TODO: Need to skip blank lines in the file too. Better way?
+                continue
+            id, sgd_name, common_name, ptm_pos, ptm_residue, pfam_domain = line.split('\t')
+            new_line = gene_names_by_locus[sgd_name].copy()
+            new_line.extend([ptm_pos, ptm_residue, pfam_domain])
+            new_line = '\t'.join(new_line) + '\n'
+            lines.append(new_line)
+    with open(interface_id_output, 'w') as interface:
+        interface.writelines(lines)
+
+
+def interface(mut_prot_input, interface_id_input, mapped_interface_output, summary_output):
+    """Map the positions of mutations in mutated proteins to PTMs at an interface.
+    
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    interface_id_input -- file path, mapping UniProt ID, ordered locus name, common name, PTM position, residue and PFAM domain name
+    mapped_interface_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name and interface data
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_interface_lines = []
+    summary_lines = []
+    with open(interface_id_input, 'r') as sites:
+        for line in sites:
+            uniprot_id, sgd_name, common_name, ptm_pos, ptm_residue, pfam_domain = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name:
+                    for mut_pos in mutated_positions:
+                        if int(ptm_pos) == int(mut_pos): # Check if the mutation coincides with the position of a binding/active site
+                            mapped_interface_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_pos, ptm_residue, pfam_domain, 'PTMfunc']) + '\n'
+                            summary_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_pos, ptm_residue, pfam_domain, 'Interfaces', 'PTMfunc']) + '\n'
+                            mapped_interface_lines.append(mapped_interface_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_interface_output, 'w') as mapped_interfaces:
+        mapped_interfaces.writelines(mapped_interface_lines)
+    with open(summary_output, 'a') as summary: #TODO: As different interface_id_inputs are supplied for acetylation, phosphorylation and ubiquitination, the PTM type should be recorded in the summary, but it is not (How to implement?).
+        summary.writelines(summary_lines)             
          
 
-def ppi(file1,mutation):
+#TODO: Check whether the PTM in ppi_sites_input file is present on the leftmost protein. I suppose it is but it would be good to confirm...
+def ppi_map(gene_names_by_locus, ppi_sites_input, ppi_id_output):
+    """Map UniProt IDs to protein names and PTMs known to affect protein-protein interactions (PPIs).
+    
+    See Beltrao et al. Cell 2012 for further details.
+    
+    Arguments:
+    gene_names_by_locus -- dictionary, key = locus_name, value = list of gene names
+    ppi_sites_input -- file path, mapping locus name to protein-protein interaction (PPI) data, including the interacting partner (name and locus name), position of PTM, residue affected, and method by which interaction was determined
+    ppi_id_output -- file path, mapping UniProt ID, ordered locus name, common name, and PPI data
+    """
+    lines = []
+    with open(ppi_sites_input, 'r') as ppi_sites:
+        #TODO: Write a check for a header - perhaps specify parameter header=T, like some R functions (give user flexibility) 
+        next(ppi_sites) # Skip the header
+        for line in ppi_sites:
+            line = line.rstrip('\n')
+            if line == '': # Need to skip blank lines in the file too. Better way?
+                continue
+            id, common_name, sgd_name, ptm_pos, ptm_residue, partner_sgd_name, partner_common_name, method = line.split('\t')
+            new_line = gene_names_by_locus[sgd_name].copy()
+            partner_uniprot_id = gene_names_by_locus[partner_sgd_name][0]
+            new_line.extend([ptm_pos, ptm_residue, partner_uniprot_id, partner_sgd_name, partner_common_name, method])
+            new_line = '\t'.join(new_line) + '\n'
+            lines.append(new_line)
+    with open(ppi_id_output, 'w') as ppi:
+        ppi.writelines(lines)
 
-    """ PTM present at the interface of two proteins and known to play role in interaction (PTMfunc; Beltrao et al. Cell 2012)"""
-
-    with open('ppi_mutation.txt', 'w') as out:
-        with open(file1, 'rU') as f:
-            for ls in f:
-                line = ls.split()
-                with open (mutation) as mu:
-                    for m in mu:
-                        m = m.split()
-                        if len(line) > 7:
-                            if m[0] == line[1] and m[1] == line[3]:
-                                take = line[1]+'\t'+line[2]+'\t'+line[3]+'\t'+'PTMfunc'
-                                fi = take.split()
-                                with open(yeastID_path) as i:
-                                    for di in i:
-                                        di = di.split()
-                                        if len(di) > 2 and di[2] == fi[0]:
-                                            summary = open('summary.txt', 'a+')
-                                            summary.write(di[0]+'\t'+di[2]+'\t'+fi[2]+'\t'+'\t'+'PPI'+'\t'+'PTMfunc'+'\n')
-                                            if take > str(0):
-                                                with open('ppi_mutation.txt', 'a') as out:
-                                                    out.write(take+'\n')
-                                                    continue
-                            if m[0] == line[6] and m[1] == line[3]:
-                                take2 = line[6]+'\t'+line[2]+'\t'+line[3]+'\t'+'PTMfunc'
-                                fi = take2.split()
-                                with open(yeastID_path) as i:
-                                    for di in i:
-                                        di=di.split()
-                                        if len(di) > 2 and di[2] == fi[0]:
-                                            summary = open('summary.txt', 'a+')
-                                            summary.write(di[0]+'\t'+di[2]+'\t'+fi[2]+'\t'+'\t'+'PPI'+'\t'+'PTMfunc'+'\n')
-                                            if take2 > str(0):
-                                                with open('ppi_mutation.txt', 'a+') as out:
-                                                    out.write(take2+'\n')
+ 
+def ppi(mut_prot_input, ppi_id_input, mapped_ppi_output, summary_output):
+    """Map the positions of mutations in mutated proteins to PTMs known to affect protein protein interactions (PPIs).
+    
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    ppi_id_input -- file path, mapping UniProt ID, ordered locus name, common name, PTM position, residue and interacting protein partner
+    mapped_interface_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name and PPI data 
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_ppi_lines = []
+    summary_lines = []
+    with open(ppi_id_input, 'r') as sites:
+        for line in sites:
+            uniprot_id, sgd_name, common_name, ptm_pos, ptm_residue, partner_uniprot_id, partner_sgd_name, partner_common_name, method = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name:
+                    for mut_pos in mutated_positions:
+                        if int(ptm_pos) == int(mut_pos): # Check if the mutation coincides with the position of a binding/active site
+                            mapped_ppi_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_pos, ptm_residue, partner_uniprot_id, partner_sgd_name, partner_common_name, method, 'PTMfunc']) + '\n'
+                            summary_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_pos, ptm_residue, partner_uniprot_id, partner_sgd_name, partner_common_name, method, 'Interactions', 'PTMfunc']) + '\n'
+                            mapped_ppi_lines.append(mapped_ppi_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_ppi_output, 'w') as mapped_ppi:
+        mapped_ppi.writelines(mapped_ppi_lines)
+    with open(summary_output, 'a') as summary:
+        summary.writelines(summary_lines)
                     
     
-def withinPro(file2, mutation):
+#TODO: Try to understand what the data for this function is???
+def withinPro_map(gene_names_by_locus, within_prot_input, within_prot_id_output): #TODO: Clarify docstring!
+    """Map UniProt IDs to protein names and pairwise combinations of PTMs known/predicted to affect protein-protein interactions (PPIs)????
+    
+    See Minguez et al. "PTMcode v2: a resource for functional associations of post-translational modifications within and between proteins." Nucleic Acids Res. 2015 Jan 28; 43 for further details.
+    
+    Arguments:
+    gene_names_by_locus -- dictionary, key = locus_name, value = list of gene names
+    within_prot_input -- file path, mapping locus name to protein-protein interaction (PPI) data
+    within_prot_id_output -- file path, mapping UniProt ID, ordered locus name, common name, and PPI data
+    """
+    lines = []
+    with open(within_prot_input, 'r') as ppi_sites:
+        #TODO: Write a check for a header - perhaps specify parameter header=T, like some R functions (give user flexibility) 
+        next(ppi_sites) # Skip the header
+        for line in ppi_sites:
+            line = line.rstrip('\n').split('\t') # assume no blank lines
+            sgd_name, common_name, ptm_pos_1, ptm_residue_1, ptm_pos_2, ptm_residue_2 = line[-6:]
+            ptm_1 = line[2]
+            ptm_2 = line[6]
+            new_line = gene_names_by_locus[sgd_name].copy()
+            new_line.extend([ptm_1, ptm_pos_1, ptm_residue_1, ptm_2, ptm_pos_2, ptm_residue_2])
+            new_line = '\t'.join(new_line) + '\n'
+            lines.append(new_line)
+    with open(within_prot_id_output, 'w') as within_prot_id:
+        within_prot_id.writelines(lines)
 
-    """ PTMs (predicted) involved in the crosstalk within a given protein at baker's years (Minguez el 2012)"""
-
-    with open('within_protein.txt', 'w') as file1:
-        with open(file2, 'rU') as f:
-            for l in f:
-                line = l.split()
-                if len(line)>19:
-                    take = line[15]+'\t'+line[16]+'\t'+line[3]+'\t'+line[17]+'\t'+line[7]+'\t'+line[19]
-                    take = take.split()
-                    with open(mutation, 'r') as mu:
-                        for m in mu:
-                            m = m.split()
-                            if m[0] == take[1] and m[1]==take[3]:
-                                take2 = take[0]+'\t'+take[1]+'\t'+take[2]+'\t'+take[3]+'\t'+'PTMcode'
-                                fi=take2.split()
-                                with open(yeastID_path) as id:
-                                    for di in id:
-                                        di=di.split()
-                                        if len(di) > 2 and di[2] == fi[1]:
-                                            summary = open('summary.txt', 'a+')
-                                            summary.write(di[0]+'\t'+di[2]+'\t'+fi[3]+'\t'+fi[2]+'\t'+'WithinProtein'+'\t'+'PTMcode'+'\n')
-                                            if take2 > str(0):
-                                                with open('within_protein.txt', 'a') as file1:
-                                                    file1.write(take2+'\n')
-                                                    continue
-                            if m[0] == take[1] and m[1] == take[5]:
-                                take3 = take[0]+'\t'+take[1]+'\t'+take[4]+'\t'+take[5]+'\t'+'PTMcode'
-                                fi = take3.split()
-                                with open(yeastID_path) as id:
-                                    for di in id:
-                                        di=di.split()
-                                        if len(di) > 2 and di[2] == fi[1]:
-                                            summary = open('summary.txt', 'a+')
-                                            summary.write(di[0]+'\t'+di[2]+'\t'+fi[3]+'\t'+fi[2]+'\t'+'WithinProtein'+'\t'+'PTMcode'+'\n')
-                                            if take3 > str(0):
-                                                with open('within_protein.txt', 'a+') as file1:
-                                                    file1.write(take3+'\n')
+ 
+def withinPro(mut_prot_input, within_prot_id_input, mapped_within_prot_output, summary_output): #TODO: Clarify docstring!
+    """Map the positions of mutations in mutated proteins to pairwise combinations of PTMs known/predicted to affect protein-protein interactions (PPIs)????
+     
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    ppi_id_input -- file path, mapping UniProt ID, ordered locus name, common name, PTM position, residue and interacting protein partner
+    mapped_interface_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name and PPI data 
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_ptms_lines = []
+    summary_lines = []
+    with open(within_prot_id_input, 'r') as ptms:
+        for line in ptms:
+            uniprot_id, sgd_name, common_name, ptm_1, ptm_pos_1, ptm_residue_1, ptm_2, ptm_pos_2, ptm_residue_2 = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name:
+                    for mut_pos in mutated_positions:
+                        if int(ptm_pos_1) == int(mut_pos): # Check if the mutation coincides with the position of a binding/active site
+                            mapped_ptm_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_1, ptm_pos_1, ptm_residue_1, ptm_2, ptm_pos_2, ptm_residue_2, 'PTMcode']) + '\n'
+                            summary_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_1, ptm_pos_1, ptm_residue_1, ptm_2, ptm_pos_2, ptm_residue_2, 'Within protein PTMs', 'PTMcode']) + '\n'
+                            mapped_ptms_lines.append(mapped_ptm_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_within_prot_output, 'w') as mapped_ptms:
+        mapped_ptms.writelines(mapped_ptms_lines)
+    with open(summary_output, 'a') as summary:
+        summary.writelines(summary_lines)
                          
 
-def betweenPro(fileb, mutation):
-
-    """ PTMs (predicted) involved in the crosstalk in different proteins at baker's years (PTMcode 2.0; Minguez el 2012) """
-
-    with open('ptm_between_proteins.txt', 'w') as file1:
-        with open(fileb, 'rU') as f:
-            for l in f:
-                line = l.split()
-                if len(line)>20:
-                    take = line[16]+'\t'+line[18]+'\t'+line[15]+'\t'+line[17]+'\t'+line[19]+'\t'+line[21]+'\t'+line[4]+'\t'+line[8]
-                    take = take.split()
-                    with open(mutation, 'r') as mu:
-                        for m in mu:
-                            m = m.split()
-                            if m[0] == take[0] and m[1]==take[4]:
-                                take2 = take[0]+'\t'+take[2]+'\t'+take[4]+'\t'+take[6]+'\t'+'PTMcode'
-                                fi = take2.split()
-                                with open(yeastID_path) as id:
-                                    for di in id:
-                                        di = di.split()
-                                        if len(di) > 2 and di[2] == fi[0]:
-                                            summary = open('summary.txt', 'a+')
-                                            summary.write(di[0]+'\t'+di[2]+'\t'+fi[2]+'\t'+fi[3]+'\t'+'BetweenProteins'+'\t'+'PTMcode'+'\n')
-                                            if take2 > str(0):
-                                                with open('ptm_between_proteins.txt', 'a') as file1:
-                                                    file1.write(take2+'\n')
-                                                    continue
-                            if m[0] == take[1] and m[1] == take[5]:
-                                take3 = take[1]+'\t'+take[3]+'\t'+take[5]+'\t'+take[7]+'\t'+'PTMcode'
-                                fi=take3.split()
-                                with open(yeastID_path) as id:
-                                    for di in id:
-                                        di = di.split()
-                                        if len(di) > 2 and di[2] == fi[0]:
-                                            summary = open('summary.txt', 'a+')
-                                            summary.write(di[0]+'\t'+di[2]+'\t'+fi[2]+'\t'+fi[3]+'\t'+'BetweenProteins'+'\t'+'PTMcode'+'\n')
-                                            if take3 > str(0):
-                                                with open('ptm_between_proteins.txt', 'a+') as file1:
-                                                    file1.write(take3+'\n')
-
+#TODO: Try to understand what the data for this function is???
+def betweenPro_map(gene_names_by_locus, between_prot_input, between_prot_id_output): #TODO: Clarify docstring!
+    """Map UniProt IDs to protein names and pairwise combinations of PTMs known/predicted to affect protein-protein interactions (PPIs)????
     
-def hotspot(fileh, mutation):
+    See Minguez et al. "PTMcode v2: a resource for functional associations of post-translational modifications within and between proteins." Nucleic Acids Res. 2015 Jan 28; 43 for further details.
+    
+    Arguments:
+    gene_names_by_locus -- dictionary, key = locus_name, value = list of gene names
+    between_prot_input -- file path, mapping locus name to protein-protein interaction (PPI) data
+    between_prot_id_output -- file path, mapping UniProt ID, ordered locus name, common name, and PPI data
+    """
+    lines = []
+    with open(between_prot_input, 'r') as ppi_sites:
+        #TODO: Write a check for a header - perhaps specify parameter header=T, like some R functions (give user flexibility) 
+        next(ppi_sites) # Skip the header
+        for line in ppi_sites:
+            line = line.rstrip('\n').split('\t') # assume no blank lines
+            sgd_name_1, common_name_1, sgd_name_2, common_name_2, ptm_pos_1, ptm_residue_1, ptm_pos_2, ptm_residue_2 = line[-8:]
+            ptm_1 = line[3]
+            ptm_2 = line[7]
+            uniprot_id_2 = gene_names_by_locus[sgd_name_2][0] #TODO: there was a key error for 'YMR5C' (this is a problem with the data input file - it should say 'YMR275C'. I have changed it manually, but need to check whether this is present in up-to-date downloaded sc_between_proteins.txt file)
+            new_line = gene_names_by_locus[sgd_name_1].copy()
+            new_line.extend([ptm_1, ptm_pos_1, ptm_residue_1, uniprot_id_2, sgd_name_2, common_name_2, ptm_2, ptm_pos_2, ptm_residue_2])
+            new_line = '\t'.join(new_line) + '\n'
+            lines.append(new_line)
+    with open(between_prot_id_output, 'w') as between_prot_id:
+        between_prot_id.writelines(lines)
 
-    """ PTMs containing motifs in a close proximity are named hotspots (Beltrao et al. Cell 2012)"""
+ 
+def betweenPro(mut_prot_input, between_prot_id_input, mapped_between_prot_output, summary_output): #TODO: Clarify docstring!
+    """Map the positions of mutations in mutated proteins to pairwise combinations of PTMs known/predicted to affect protein-protein interactions (PPIs)????
+     
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    between_prot_id_input -- file path, mapping UniProt ID, ordered locus name, common name, PTM position, residue to a PTM on another protein
+    mapped_between_prot_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name and inter-protein PTM data 
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_ptms_lines = []
+    summary_lines = []
+    with open(between_prot_id_input, 'r') as ptms:
+        for line in ptms:
+            uniprot_id_1, sgd_name_1, common_name_1, ptm_1, ptm_pos_1, ptm_residue_1, uniprot_id_2, sgd_name_2, common_name_2, ptm_2, ptm_pos_2, ptm_residue_2 = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name_1:
+                    for mut_pos in mutated_positions:
+                        if int(ptm_pos_1) == int(mut_pos): # Check if the mutation coincides with the position of a binding/active site
+                            mapped_ptm_line = '\t'.join([uniprot_id_1, sgd_name_1, common_name_1, ptm_1, ptm_pos_1, ptm_residue_1, uniprot_id_2, sgd_name_2, common_name_2, ptm_2, ptm_pos_2, ptm_residue_2, 'PTMcode']) + '\n'
+                            summary_line = '\t'.join([uniprot_id_1, sgd_name_1, common_name_1, ptm_1, ptm_pos_1, ptm_residue_1, uniprot_id_2, sgd_name_2, common_name_2, ptm_2, ptm_pos_2, ptm_residue_2, 'Between protein PTMs', 'PTMcode']) + '\n'
+                            mapped_ptms_lines.append(mapped_ptm_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_between_prot_output, 'w') as mapped_ptms:
+        mapped_ptms.writelines(mapped_ptms_lines)
+    with open(summary_output, 'a') as summary:
+        summary.writelines(summary_lines)
 
-    with open('hotspot.txt', 'w') as hotspot:
-        with open(fileh, 'rU') as f:
-            for l in f:
-                line = l.split()
-                with open(mutation, 'r') as mu:
-                    for m in mu:
-                        m = m.split()
-                        if len(line) > 6:
-                            if m[0] == line[2] and m[1] == line[3]:
-                                take = line[1]+'\t'+line[2]+'\t'+line[3]+'\t'+line[5]+'\t'+line[6]+'\t'+'PTMfunc'
-                                fi = take.split()
-                                with open(yeastID_path) as id:
-                                    for di in id:
-                                        di = di.split()
-                                        if len(di) > 2 and di[2] == fi[1]:
-                                            summary = open('summary.txt', 'a+')
-                                            summary.write(di[0]+'\t'+di[2]+'\t'+fi[2]+'\t'+fi[3]+'\t'+'HotSpot'+'\t'+'PTMFunc'+'\n')
-                                            if take > str(0):
-                                                with open('hotspot.txt', 'a') as hotspot:
-                                                    hotspot.write(take+'\n')
+
+#TODO: Try to understand what the data for this function is???
+def hotspot_map(gene_names_by_locus, hotspot_input, hotspot_id_output): #TODO: Clarify docstring!
+    """Map UniProt IDs to protein names and PTM hotspots.
+    
+    PTM-containing motifs in close proximity are named hotspots?? 
+    See Beltrao et al. Cell 2012 for further details.
+    
+    Arguments:
+    gene_names_by_locus -- dictionary, key = locus_name, value = list of gene names
+    hotspot_input -- file path, mapping locus name to hotspot data, including PTM position, modified residue, PFAM domain, PDB ID
+    hotspot_id_output -- file path, mapping UniProt ID, ordered locus name, common name, and hotspot data
+    """
+    lines = []
+    with open(hotspot_input, 'r') as hotspots:
+        #TODO: Write a check for a header - perhaps specify parameter header=T, like some R functions (give user flexibility) 
+        next(hotspots) # Skip the header
+        for line in hotspots:
+            line = line.rstrip('\n')
+            if line == '': # Need to skip blank lines in the file too. Better way?
+                continue
+            id, sgd_name, common_name, ptm_pos, ptm_residue, pfam_domain, pdb_id = line.split('\t')
+            new_line = gene_names_by_locus[sgd_name].copy()
+            new_line.extend([ptm_pos, ptm_residue, pfam_domain, pdb_id])
+            new_line = '\t'.join(new_line) + '\n'
+            lines.append(new_line)
+    with open(hotspot_id_output, 'w') as hotspot_id:
+        hotspot_id.writelines(lines)
+
+# hotspot_map(names_by_locus, 'hotspot.txt', 'hotspot_id.txt')
+ 
+def hotspot(mut_prot_input, hotspot_id_input, mapped_hotspot_output, summary_output): #TODO: Clarify docstring!
+    """Map the positions of mutations in mutated proteins to PTM hotspots.
+    
+    PTM-containing motifs in close proximity are named hotspots?? 
+    See Beltrao et al. Cell 2012 for further details.
+    
+    Arguments:
+    mut_prot_input -- dictionary, mapping mutated proteins (common names) to mutated positions in each protein
+    hotspot_id_input -- file path, mapping UniProt ID, ordered locus name, common name and hotspot data, including PTM position, residue, PFAM domain and PDB ID
+    mapped_hospot_output -- file path, mapping each mutation in mut_prot_input to UniProt ID, ordered locus name, common name and hotspot data 
+    summary_output -- file path, recording a summary of all features to which mutations have been mapped
+    """
+    mapped_ptms_lines = []
+    summary_lines = []
+    with open(hotspot_id_input, 'r') as ptms:
+        for line in ptms:
+            uniprot_id, sgd_name, common_name, ptm_pos, ptm_residue, pfam_domain, pdb_id = line.rstrip('\n').split('\t')
+            for mutated_protein, mutated_positions in mut_prot_input.items():
+                if mutated_protein == common_name:
+                    for mut_pos in mutated_positions:
+                        if int(ptm_pos) == int(mut_pos): # Check if the mutation coincides with the position of a binding/active site
+                            mapped_ptm_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_pos, ptm_residue, pfam_domain, pdb_id, 'PTMfunc']) + '\n'
+                            summary_line = '\t'.join([uniprot_id, sgd_name, common_name, ptm_pos, ptm_residue, pfam_domain, pdb_id, 'Hotspots', 'PTMfunc']) + '\n'
+                            mapped_ptms_lines.append(mapped_ptm_line)
+                            summary_lines.append(summary_line)
+    with open(mapped_hotspot_output, 'w') as mapped_ptms:
+        mapped_ptms.writelines(mapped_ptms_lines)
+    with open(summary_output, 'a') as summary:
+        summary.writelines(summary_lines)
                           
 
-def sum_file_map():  
+#TODO: Remove this function!
+def sum_file_map(summary_input, final_report_output):  
+    """Generate a final report file."""
+    with open(final_report_output, 'w') as final_report:
+        with open(summary_input, 'r') as summary:
+            for line in summary:
+                final_report.write(line)
 
-    """ reports all the results in a 'final-report' file """
-
-    with open('final_report.txt', 'w') as x:
-        with open('summary.txt') as fil1:
-            for fi in OrderedDict.fromkeys(fil1):
-                x.write(fi)
-
-
-def resc():
-    try:
-        r = resource_stream("ymap", "/data/PTMcode+PTMfunc_data/3DID_aceksites_interfaceRes_sc.txt").read().decode()
-        with open('3DID_aceksites_interfaceRes_sc.txt','w') as h:
-            h.write(r+'\n')
-    except IOError:
-        pass
-    try:
-        ri = resource_stream("ymap", "/data/PTMcode+PTMfunc_data/3DID_phosphosites_interfaceRes_sc.txt").read().decode()
-        with open('3DID_phosphosites_interfaceRes_sc.txt','w') as hi:
-            hi.write(ri+'\n')
-    except IOError:
-        pass
-    try:
-        riu = resource_stream("ymap", "/data/PTMcode+PTMfunc_data/3DID_ubisites_interfaceRessc_sc.txt").read().decode()
-        with open('3DID_ubisites_interfaceRessc_sc.txt','w') as hiu:
-            hiu.write(riu+'\n')
-    except IOError:
-        pass
-    try:
-        rac = resource_stream("ymap", "/data/PTMcode+PTMfunc_data/SC_acet_interactions.txt").read().decode()
-        with open('SC_acet_interactions.txt','w') as hia:
-            hia.write(rac+'\n')
-    except IOError:
-        pass
-    try:
-        t = resource_stream("ymap", "/data/PTMcode+PTMfunc_data/sc_btw_proteins.txt.zip").read()
-        with open('sc_btw_proteins.txt.zip','wb') as ht:
-            ht.write(t)
-    except IOError:
-        pass
-    try:
-        zipfile.ZipFile('sc_btw_proteins.txt.zip', 'r').extractall()
-    except IOError:
-        pass
-    try:
-        rps = resource_stream("ymap", "/data/PTMcode+PTMfunc_data/SC_psites_interactions_sc.txt").read().decode()
-        with open('SC_psites_interactions_sc.txt','w') as hip:
-            hip.write(rps+'\n')
-    except IOError:
-        pass
-    try:
-        rui = resource_stream("ymap", "/data/PTMcode+PTMfunc_data/SC_ubi_interactions_sc.txt").read().decode()
-        with open('SC_ubi_interactions_sc.txt','w') as hui:
-            hui.write(rui+'\n')
-    except IOError:
-        pass
-    try:
-        rin = resource_stream("ymap", "/data/PTMcode+PTMfunc_data/sc_within_proteins.txt").read().decode()
-        with open('sc_within_proteins.txt','w') as hin:
-            hin.write(rin+'\n')
-    except IOError:
-        pass
-    try:
-        rsc = resource_stream("ymap", "/data/PTMcode+PTMfunc_data/schotspot_updated.txt").read().decode()
-        with open('schotspot_updated.txt','w') as his:
-            his.write(rsc+'\n')
-    except IOError:
-        pass
-    return 
-
+#TODO: Do we need some other strategy for when ymap is run directly from source code i.e. not installed?
+#TODO: The package data paths are still hard-coded (not in variables yet). We could specify the output dir as argument, 
+# but since we chdir in the download() function, it seems redundant - unless we chdir in each function called in download instead...
+def resc(output_dir):
+    """Copy pre-downloaded data files (PTMfunc and PTMcode database files) from the ymap package to output dir."""
+    ymap_pkg = Requirement.parse('ymap')
+    pkg_data_dir = 'ymap/data/PTMcode+PTMfunc_data'
+    #TODO: Above is a weird fix that lets you access installed ymap package resources even when 
+    # ymap.py is run from some arbitrary directory (provided ymap package is in sys.path)... I think
+    # It may not be necessary for deployment, because installed ymap should only ever be run from 
+    # the installed package folder. But if user wants to run from source code (as per readme), we
+    # still have to cope with getting the PTMcode and PTMfunc data to the user. This was handled
+    # by ymap.py before I changed parts, but I feel like it could be handled in a more tidy way
+    # using this function and a check to see if ymap has been installed.
+    # Replace ptm_data_dir line with 'ptm_data_dir = resource_filename(ymap_pkg, pkg_data_dir)' to see weird fix
+    # Replace with 'ptm_data_dir = resource_filename('ymap', 'data/PTMcode+PTMfunc_data')' for weird fix
+    # which will work with both source code and installed version provided the data directory is
+    # in the same folder as ymap.py
+    ptm_data_dir = resource_filename(ymap_pkg, pkg_data_dir)
+    ptm_data_files = os.listdir(ptm_data_dir)
+    for file in ptm_data_files:
+        file_path = os.path.join(ptm_data_dir, file)
+        shutil.copy2(file_path, output_dir)
+    
+def extractZips(dir, extract_to_dir):
+    """Recursively search given dir for zip files and extract them to extract_to_dir."""
+    for dir_path, dir_names, file_names in os.walk(dir):
+        for file_name in file_names:
+            file = os.path.join(dir_path, file_name)
+            if zipfile.is_zipfile(file):
+                with zipfile.ZipFile(file, 'r') as z:
+                    z.extractall(extract_to_dir)
+    
 
 #////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #                               USEAGE       (Optional) 
@@ -1017,192 +1290,70 @@ def resc():
 #////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-c = YGtPM()
-wd = os.getcwd()
-
-# Paths for data, input, output directories
-data_path = os.path.join(wd, 'ymap_webtool', 'data', 'ymap_data')
-input_path = os.path.join(wd, 'ymap_webtool', 'data', 'input')
-output_path = os.path.join(wd, 'ymap_webtool', 'data', 'output') 
-
-# Paths for input files
-gene_input_file = os.path.join(input_path, 'mutated_proteins.txt') #TODO: 2 files with same name
-protein_input_file = os.path.join(input_path, 'mutation.txt')
-
-# Paths for data files
-gff_path = os.path.join(data_path, 'gff.txt')
-yeastID_path = os.path.join(data_path, 'yeastID.txt')
-frmt_path = os.path.join(data_path, 'frmt.txt')
-
-uniprot_mod_raw_path = os.path.join(data_path, 'uniprot_mod_raw.txt')
-bact_path = os.path.join(data_path, 'bact.txt')
-domains_path = os.path.join(data_path, 'domains.txt')
-PTMs_path = os.path.join(data_path, 'PTMs.txt')
-nucleotide_path = os.path.join(data_path, 'nucleotide.txt')
-
-d_id_map_path = os.path.join(data_path, 'd_id_map.txt')
-sites_id_path = os.path.join(data_path, 'sites_id.txt')
-PTM_id_file_path = os.path.join(data_path, 'PTM_id_file.txt')
-id_domain_path = os.path.join(data_path, 'id_domain.txt')
-id_nucleotide_path = os.path.join(data_path, 'id_nucleotide.txt')
-pdb_path = os.path.join(data_path, 'pdb.txt')
-
-aceksites_path = os.path.join(data_path, '3DID_aceksites_interfaceRes_sc.txt')
-phosphosites_path = os.path.join(data_path, '3DID_phosphosites_interfaceRes_sc.txt')
-ubisites_path = os.path.join(data_path, '3DID_ubisites_interfaceRessc_sc.txt')
-SC_acet_interactions_path = os.path.join(data_path, 'SC_acet_interactions.txt')
-SC_psites_interactions_path = os.path.join(data_path, 'SC_psites_interactions_sc.txt')
-SC_ubi_interactions_path = os.path.join(data_path, 'SC_ubi_interactions_sc.txt')
-SC_within_proteins_path = os.path.join(data_path, 'sc_within_proteins.txt')
-SC_btw_proteins_zip_path = os.path.join(data_path, 'sc_btw_proteins.txt.zip')
-SC_btw_proteins_path = os.path.join(data_path, 'sc_btw_proteins.txt')
-schotspot_path = os.path.join(data_path, 'schotspot_updated.txt')
-
-uniprot_bioGrid_path = os.path.join(data_path, 'uniprot_bioGrid.txt')
-
-# Paths for output directories
-domains_path = os.path.join(output_path, 'Domains') 
-PTMs_path = os.path.join(output_path, 'PTMs')
-nuc_bind_path = os.path.join(output_path, 'Nucleotide_binding')
-AB_sites_path = os.path.join(output_path, 'A-B-sites')
-PDB_path = os.path.join(output_path, 'PDB')
-interface_path = os.path.join(output_path, 'Interface')
-interface_acetylation_path = os.path.join(interface_path, 'Acetylation')
-interface_phosphorylation_path = os.path.join(interface_path, 'Phosphorylation')
-interface_ubiquitin_path = os.path.join(interface_path, 'Ubiquitination')
-PPI_path = os.path.join(output_path, 'PPI')
-PPI_acetylation_path = os.path.join(PPI_path, 'Acetylation')
-PPI_phosphorylation_path = os.path.join(PPI_path, 'Phosphorylation')
-PPI_ubiquitin_path = os.path.join(PPI_path, 'Ubiquitination')
-PTM_within_path = os.path.join(output_path, 'PTMs_within_Proteins')
-PTM_between_path = os.path.join(output_path, 'PTMs_between_Proteins')
-PTM_hotspots_path = os.path.join(output_path, 'PTMs_hotSpots')
-
-# Paths for output files
-# ab_mutation_file.txt
-# biog.txt
-# domains_mapped.txt
-# final_report.txt
-# hotspot.txt
-# interface_mutation.txt
-# mutated_proteins.txt
-# mutation_id.txt
-# nucleotide_map.txt
-# ppi_mutation.txt
-# ptm_between_proteins.txt
-# pvalue.txt
-# stru_mutation.txt
-# summary.txt
-# within_protein.txt
-
-
-def data(): 
-
-    """ this function will download and clean required data to run ymap methods smoothly """
-
-    start_time = time.time()
-    os.mkdir(data_path)
-    os.chdir(data_path)
-    try:
-        resc()
-    except IOError:
-        pass
-    try:
-        dat = c.pTMdata()
-    except IOError:
-        pass
-    try:
-        cl = c.clean(uniprot_mod_raw_path)
-    except IOError:
-        pass
-    try:
-        i = c.iD()
-    except IOError:
-        pass
-    try:
-        m = c.pmap(yeastID_path, PTMs_path)
-    except IOError:
-        pass
-    try:
-        d = c.dclean(uniprot_mod_raw_path)
-    except IOError:
-        pass
-    try:
-        dm = c.d_map(yeastID_path, domains_path)
-    except IOError:
-        pass
-    try:
-        ab = c.ab(uniprot_mod_raw_path)
-    except IOError:
-            pass
-    try:
-        ii = c.id(bact_path, 'yeast_id.txt')
-    except IOError:
-            pass
-    try:
-        bio=c.bioGrid()
-    except IOError:
-            pass
-    try:
-        c.pdb_c(uniprot_mod_raw_path)
-    except IOError:
-        pass
-    try:
-        c.gff()
-    except IOError:
-        pass
-    try:
-        c.frmt(gff_path)
-    except IOError:
-        pass
-    try:
-        c.id_map(yeastID_path, frmt_path)
-    except IOError:
-        pass
-    try:
-        c.nucleotide()
-    except IOError:
-        pass
-    try:
-        c.n_map(yeastID_path, nucleotide_path)
-    except IOError:
-        pass
-    try:
-        z = zipfile.ZipFile(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'sc_btw_proteins.txt.zip', 'r')
-        z.extractall()
-    except IOError:
-        pass
-    try:
-        shutil.copy2(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'3DID_aceksites_interfaceRes_sc.txt', wd)
-        shutil.copy2(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'3DID_phosphosites_interfaceRes_sc.txt', wd)
-        shutil.copy2(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'3DID_ubisites_interfaceRessc_sc.txt', wd) 
-        shutil.copy2(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'SC_acet_interactions.txt', wd)
-        shutil.copy2(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'SC_psites_interactions_sc.txt', wd)
-        shutil.copy2(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'SC_ubi_interactions_sc.txt', wd)
-        shutil.copy2(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'sc_within_proteins.txt', wd)
-        shutil.copy2(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'schotspot_updated.txt', wd)
-        shutil.copy2(wd+'/'+'data'+'/'+'PTMcode+PTMfunc_data'+'/'+'sc_btw_proteins.txt', wd)    
-    except IOError:
-        pass
+def download(): #TODO: Directory as argument
+    """Download/Copy all required data into a specified directory."""
+    
+    start_time = time.clock()
+    os.makedirs(data_dir_path, exist_ok=True)
+    os.chdir(data_dir_path)
+    
+    resc(data_dir_path) # Copy files packaged with ymap
+    extractZips(data_dir_path, data_dir_path)
+    pTMdata(uniprot_file_path) # Download UniProt file (yeast protein features)
+    gff(gff_file_path) # Download Genome File Format (GFF) file for yeast genome (incl. all genomic loci and chromosome sequences)
+    iD(yeastID_file_path) # Download yeastID file (mapping UniProt IDs to locus names and common gene/protein names)
+    bioGrid(uniprot_biogrid_file_path) # Download UniProt BioGrid file (mapping UniProt IDs to BioGrid IDs)
+    
     os.chdir(wd)
-    return "All required data downloaded in %s seconds" % (time.time() - start_time)
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
 
+def data():
+    """Process data files into intermediate files, including only relevant data and """
 
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-#//////////////////////////////// Following two codes are used for return the mutations at proteins level \\\\\\\\\\\\\\\\\\
-#///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    start_time = time.clock()
+    os.makedirs(data_dir_path, exist_ok=True)
+    os.chdir(data_dir_path)
 
+    frmt(gff_file_path, frmt_file_path)
+    
+    #TODO: We could just loop over the Uniprot file once and write all the files in the same function...
+    make_ptms_file(uniprot_file_path, ptms_file_path)
+    make_domains_file(uniprot_file_path, domains_file_path)
+    make_bact_file(uniprot_file_path, bact_file_path)
+    make_pdb_file(uniprot_file_path, pdb_file_path)
+    make_nucleotide_file(uniprot_file_path, nucleotide_file_path)
+    
+    # Create dictionary for yeastID_input
+    gene_names = parse_gene_names(yeastID_file_path)
+    gene_names_by_locus = parse_names_by_locus(gene_names)
+    
+    # To each line of each intermediate file, prepend set of identifiers not included in file
+    # Identifiers: UniProt ID, locus name, common gene/protein name
+    id_map(gene_names_by_locus, frmt_file_path, d_id_map_file_path)
+    pmap(gene_names, ptms_file_path, ptm_id_file_path)
+    d_map(gene_names, domains_file_path, domain_id_file_path)
+    id(gene_names, bact_file_path, sites_id_file_path)
+    n_map(gene_names, nucleotide_file_path, nucleotide_id_file_path)
+    mu_map(gene_names, pdb_file_path, struct_id_file_path)
+    
+    interface_map(gene_names_by_locus, interface_acet_file_path, interface_acet_id_file_path)
+    interface_map(gene_names_by_locus, interface_phos_file_path, interface_phos_id_file_path)
+    interface_map(gene_names_by_locus, interface_ubiq_file_path, interface_ubiq_id_file_path)
+    ppi_map(gene_names_by_locus, interact_acet_file_path, interact_acet_id_file_path)
+    ppi_map(gene_names_by_locus, interact_phos_file_path, interact_phos_id_file_path)
+    ppi_map(gene_names_by_locus, interact_ubiq_file_path, interact_ubiq_id_file_path)
+    withinPro_map(gene_names_by_locus, within_prot_file_path, within_prot_id_file_path)
+    betweenPro_map(gene_names_by_locus, between_prot_file_path, between_prot_id_file_path)
+    hotspot_map(gene_names_by_locus, regulatory_hotspots_file_path, regulatory_hotspots_id_file_path)
 
-def mutation_types_file(): 
-
-    """ mutation type and amino acid change calculation where ref. and mutant base known """
-
-    start_time = time.time()
-    try:
-        mutation_file(gene_input_file, d_id_map_path)
-    except IOError:
-        pass
-    return "Mutations with mutations types are available to map on functional entities"
+    os.chdir(wd)
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
 
 
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1210,396 +1361,308 @@ def mutation_types_file():
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
-def ptm():
+def ptm(mutations, biogrid_IDs):
+    """Map mutations to PTMs.
+    
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
 
-    """ PTMs mapping to mutations """
+    start_time = time.clock()
+    
+    ptm_map(mutations, ptm_id_file_path, mapped_ptms_file_path, summary_file_path)
+    enrich(mapped_ptms_file_path)
+    preWeb(biogrid_IDs, mapped_ptms_file_path)
 
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-        raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            a = c.ptm_map(protein_input_file, PTM_id_file_path)
-        except IOError:
-            pass
-        try:    
-            p = c.enrich('mutated_proteins.txt')
-        except IOError:
-            pass
-        try:
-            c.preWeb(uniprot_bioGrid_path, 'mutated_proteins.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(PTMs_path)
-            shutil.move(output_path+"/"+'mutated_proteins.txt', PTMs_path)
-            shutil.move(output_path+"/"+'pvalue.txt', PTMs_path)
-            shutil.move(output_path+"/"+'biog.txt', PTMs_path)
-        except IOError:
-            pass
-    return "PTMs mapped in %s seconds" % (time.time() - start_time)
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(ptms_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_ptms_file, ptms_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, ptms_dir_path)
+    shutil.move(output_dir_path+"/"+biog_file, ptms_dir_path)
+    
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
 
 
-def domain():
+def domain(mutations, biogrid_IDs):
+    """Map mutations to domains.
+    
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
 
-    """ protein domain mapping """
+    start_time = time.clock()
+    
+    dmap(mutations, domain_id_file_path, mapped_domains_file_path, summary_file_path)
+    enrich(mapped_domains_file_path)  
+    preWeb(biogrid_IDs, mapped_domains_file_path)
 
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-        raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            dom = c.dmap(protein_input_file, id_domain_path)
-        except IOError:
-            pass
-        try:
-           p = c.enrich('domains_mapped.txt')  
-        except IOError:
-            pass
-        try:
-            c.preWeb(uniprot_bioGrid_path, 'domains_mapped.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(domains_path)
-        except IOError:
-            pass
-        try:
-            shutil.move(output_path+"/"+'domains_mapped.txt', domains_path)
-            shutil.move(output_path+"/"+'pvalue.txt', domains_path)
-            shutil.move(output_path+"/"+'biog.txt', domains_path)
-        except IOError:
-            pass
-    return "Domains mapped in %s seconds" % (time.time() - start_time)
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(domains_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_domains_file, domains_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, domains_dir_path)
+    shutil.move(output_dir_path+"/"+biog_file, domains_dir_path)
+    
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
+
     
 
-def nucleo():
-
-    """ DNA-protein binding motif mapping """
-
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-        raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            c.nucleotide_map(protein_input_file, id_nucleotide_path)
-        except IOError:
-            pass
-        try:
-           p = c.enrich('nucleotide_map.txt')  
-        except IOError:
-            pass
-        try:
-            c.preWeb(uniprot_bioGrid_path, 'nucleotide_map.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(nuc_bind_path)
-        except IOError:
-            pass
-        try:
-            shutil.move(output_path+"/"+'nucleotide_map.txt', nuc_bind_path)
-            shutil.move(output_path+"/"+'pvalue.txt', nuc_bind_path)
-            shutil.move(output_path+"/"+'biog.txt', nuc_bind_path)
-        except IOError:
-            pass
-    return "Nucleotide_binding domains mapped in %s seconds" % (time.time() - start_time)
-
-
-def ab():
-
-    """ active and binding site mapping """
-
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-            raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            mm = c.mmap(sites_id_path, protein_input_file)
-        except IOError:
-            pass
-        try:
-            p = c.enrich('ab_mutation_file.txt')
-        except IOError:
-            pass
-        try:
-            c.preWeb(uniprot_bioGrid_path, 'ab_mutation_file.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(AB_sites_path)
-            shutil.move(output_path+"/"+'ab_mutation_file.txt', AB_sites_path)
-            shutil.move(output_path+"/"+'pvalue.txt', AB_sites_path)
-            shutil.move(output_path+"/"+'biog.txt', AB_sites_path)
-        except IOError:
-            pass
-    return "Active-Binding proteins sites mapped in %s seconds" % (time.time() - start_time)
-
-
-def struc_map():
-
-    """ structural regions mapping """
-
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-        raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            c.mu_map()
-        except IOError:
-            pass
-        try:
-            pd = c.pdb(pdb_path)
-        except IOError:
-            pass
-        try:
-            p = c.enrich('stru_mutation.txt')
-        except IOError:
-            pass
-        try:
-            c.preWeb(uniprot_bioGrid_path, 'stru_mutation.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(PDB_path)
-            shutil.move(output_path+"/"+'stru_mutation.txt', PDB_path)
-            shutil.move(output_path+"/"+'pvalue.txt', PDB_path)
-            shutil.move(output_path+"/"+'biog.txt', PDB_path)
-        except IOError:
-            pass
-        return "Mutations are mapped to structural features in %s seconds" % (time.time() - start_time)
-
-def intf():
-
-    """ east = effective data which shows PTMs present at interface, ppi and 
-        domain (hotspot) this analaysis could lead to an effective way to interpret
-        user's mutational data on Yeast proteins from PTMfunc (also 3DID db) and PTMcode 2.0"""
+def nucleo(mutations, biogrid_IDs):
+    """Map mutations to nucleotide binding sites.
     
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-        raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            interface(aceksites_path ,protein_input_file)
-        except IOError:
-            pass
-        try:
-            p = c.enrich('interface_mutation.txt')
-        except IOError:
-            pass 
-        try:
-            os.mkdir(interface_path)
-            os.mkdir(interface_acetylation_path)
-            shutil.move(output_path+"/"+'interface_mutation.txt', interface_acetylation_path)
-            shutil.move(output_path+"/"+'pvalue.txt', interface_acetylation_path)
-        except IOError:
-            pass
-        try:
-            interface(phosphosites_path, protein_input_file)
-        except IOError:
-            pass
-        try:
-            p = c.enrich('interface_mutation.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(interface_phosphorylation_path)
-            shutil.move(output_path+"/"+'interface_mutation.txt', interface_phosphorylation_path)
-            shutil.move(output_path+"/"+'pvalue.txt', interface_phosphorylation_path)
-        except IOError:
-            pass
-        try:   
-            interface(ubisites_path, protein_input_file)
-        except IOError:
-            pass
-        try:
-            p = c.enrich('interface_mutation.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(interface_ubiquitin_path)
-            shutil.move(output_path+"/"+'interface_mutation.txt', interface_ubiquitin_path)
-            shutil.move(output_path+"/"+'pvalue.txt', interface_ubiquitin_path)
-        except IOError:
-            pass
-        return "run time is %s seconds" % (time.time() - start_time)
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
 
-def pi():
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-            raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            ppi(SC_acet_interactions_path, protein_input_file)
-        except IOError:
-            pass
-        try:
-            c.enrich('ppi_mutation.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(PPI_path)
-            os.mkdir(PPI_acetylation_path)
-            shutil.move(output_path+"/"+'ppi_mutation.txt', PPI_acetylation_path)
-            shutil.move(output_path+"/"+'pvalue.txt', PPI_acetylation_path)
-        except IOError:
-            pass
-        try:
-            ppi(SC_psites_interactions_path, protein_input_file)
-        except IOError:
-            pass
-        try:
-            p = c.enrich('ppi_mutation.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(PPI_phosphorylation_path)
-            shutil.move(output_path+"/"+'ppi_mutation.txt', PPI_phosphorylation_path)
-            shutil.move(output_path+"/"+'pvalue.txt', PPI_phosphorylation_path)
-        except IOError:
-            pass
+    start_time = time.clock()
     
-        try:
-            ppi(SC_ubi_interactions_path, protein_input_file)
-        except IOError:
-            pass
-        try:
-            c.enrich('ppi_mutation.txt')
-        except IOError:
-            pass 
-        try:
-            os.mkdir(PPI_ubiquitin_path)
-            shutil.move(output_path+"/"+'ppi_mutation.txt', PPI_ubiquitin_path)
-            shutil.move(output_path+"/"+'pvalue.txt', PPI_ubiquitin_path)
-        except IOError:
-            pass
-        return "run time is %s seconds" % (time.time() - start_time)
+    nucleotide_map(mutations, nucleotide_id_file_path, mapped_nucleotide_file_path, summary_file_path)
+    enrich(mapped_nucleotide_file_path)  
+    preWeb(biogrid_IDs, mapped_nucleotide_file_path)
 
-def withP():
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-            raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            withinPro(SC_within_proteins_path, protein_input_file)
-        except IOError:
-            pass
-        try:
-            p = c.enrich('within_protein.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(PTM_within_path)
-            shutil.move(output_path+"/"+'within_protein.txt', PTM_within_path)
-            shutil.move(output_path+"/"+'pvalue.txt', PTM_within_path)
-        except IOError:
-            pass
-        return "run time is %s seconds" % (time.time() - start_time)
-
-def betweenP():
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-            raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            betweenPro(SC_btw_proteins_path, protein_input_file)
-        except IOError:
-            pass
-        try:
-            p = c.enrich('ptm_between_proteins.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(PTM_between_path)
-            shutil.move(output_path+"/"+'ptm_between_proteins.txt', PTM_between_path)
-            shutil.move(output_path+"/"+'pvalue.txt', PTM_between_path)
-        except IOError:
-            pass
-        return "run time is %s seconds" % (time.time() - start_time)
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(nuc_bind_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_nucleotide_file, nuc_bind_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, nuc_bind_dir_path)
+    shutil.move(output_dir_path+"/"+biog_file, nuc_bind_dir_path)
+    
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
 
 
-def hotS():
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-            raise StopIteration('because of missing mutation file')
-    else:
-        try:
-            hotspot(schotspot_path, protein_input_file)
-        except IOError:
-            pass
-        try:
-            p = c.enrich('hotspot.txt')
-        except IOError:
-            pass
-        try:
-            os.mkdir(PTM_hotspots_path)
-            shutil.move(output_path+"/"+'hotspot.txt', PTM_hotspots_path)
-            shutil.move(output_path+"/"+'pvalue.txt', PTM_hotspots_path)
-        except IOError:
-            pass
-        return "run time is %s seconds" % (time.time() - start_time)
+def ab(mutations, biogrid_IDs):
+    """Map mutations to active/binding sites.
+    
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
 
+    start_time = time.clock()
+    
+    mmap(mutations, sites_id_file_path, mapped_sites_file_path, summary_file_path)
+    enrich(mapped_sites_file_path)
+    preWeb(biogrid_IDs, mapped_sites_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(ab_sites_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_sites_file, ab_sites_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, ab_sites_dir_path)
+    shutil.move(output_dir_path+"/"+biog_file, ab_sites_dir_path)
+    
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
+
+
+def struc_map(mutations, biogrid_IDs):
+    """Map mutations to active/binding sites.
+    
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
+
+    start_time = time.clock()
+    
+    pdb(mutations, struct_id_file_path, mapped_struct_file_path, summary_file_path)
+    enrich(mapped_struct_file_path)
+    preWeb(biogrid_IDs, mapped_struct_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(pdb_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_struct_file, pdb_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, pdb_dir_path)
+    shutil.move(output_dir_path+"/"+biog_file, pdb_dir_path)
+        
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
+
+def intf(mutations, biogrid_IDs):
+    """Map mutations to PTMs (acetylation, phosphorylation, ubiquitination) at the inferfaces of mutated proteins.
+    
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
+
+    start_time = time.clock()
+    
+    # Map to acetylations
+    interface(mutations, interface_acet_id_file_path, mapped_interface_acet_file_path, summary_file_path)
+    enrich(mapped_interface_acet_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(interface_dir_path, exist_ok=True)
+    os.makedirs(interface_acet_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_interface_acet_file, interface_acet_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, interface_acet_dir_path)
+
+    # Map to phosphoylations
+    interface(mutations, interface_phos_id_file_path, mapped_interface_phos_file_path, summary_file_path)
+    enrich(mapped_interface_phos_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(interface_phos_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_interface_phos_file, interface_phos_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, interface_phos_dir_path)
+
+    # Map to ubiquitinations
+    interface(mutations, interface_ubiq_id_file_path, mapped_interface_ubiq_file_path, summary_file_path)
+    enrich(mapped_interface_ubiq_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(interface_ubiq_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_interface_ubiq_file, interface_ubiq_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, interface_ubiq_dir_path)
+
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
+
+def pi(mutations, biogrid_IDs):
+    """Map mutations to PTMs known to affect protein-protein interactions (PPIs).
+    
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
+
+    start_time = time.clock()
+    
+    # Map to acetylations
+    ppi(mutations, interact_acet_id_file_path, mapped_interact_acet_file_path, summary_file_path)
+    enrich(mapped_interact_acet_file_path)
+    
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(ppi_dir_path, exist_ok=True)
+    os.makedirs(ppi_acet_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_interact_acet_file, ppi_acet_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, ppi_acet_dir_path)
+
+    # Map to phosphorylations
+    ppi(mutations, interact_phos_id_file_path, mapped_interact_phos_file_path, summary_file_path)
+    enrich(mapped_interact_phos_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(ppi_phos_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_interact_phos_file, ppi_phos_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, ppi_phos_dir_path)
+
+    # Map to ubiquitinations
+    ppi(mutations, interact_ubiq_id_file_path, mapped_interact_ubiq_file_path, summary_file_path)
+    enrich(mapped_interact_ubiq_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(ppi_ubiq_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_interact_ubiq_file, ppi_ubiq_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, ppi_ubiq_dir_path)
+        
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
+
+def withP(mutations, biogrid_IDs):
+    """Map mutations to PTMs within interacting proteins. See PTMcode2 for further details.
+    
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
+
+    start_time = time.clock()
+    
+    withinPro(mutations, within_prot_id_file_path, mapped_within_prot_file_path, summary_file_path)
+    enrich(mapped_within_prot_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(ptm_within_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_within_prot_file, ptm_within_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, ptm_within_dir_path)
+
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
+
+def betweenP(mutations, biogrid_IDs):
+    """Map mutations to PTMs between interacting proteins. See PTMcode2 for further details.
+    
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
+
+    start_time = time.clock()
+    
+    betweenPro(mutations, between_prot_id_file_path, mapped_between_prot_file_path, summary_file_path)
+    enrich(mapped_between_prot_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(ptm_between_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_between_prot_file, ptm_between_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, ptm_between_dir_path)
+
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
+
+def hotS(mutations, biogrid_IDs):
+    """Map mutations to PTMs in PTM hotspots. See PTMfunc for further details.
+    
+    Perform mapping, GO enrichment on the genes/proteins containing mapped mutations, generate file of associated BioGrid IDs.
+    Move files to respective output folders.
+    """
+
+    start_time = time.clock()
+    
+    hotspot(mutations, regulatory_hotspots_id_file_path, mapped_hotspot_file_path, summary_file_path)
+    enrich(mapped_hotspot_file_path)
+
+    #TODO: Remove this part when we know files are moved into the right place without it
+    os.makedirs(ptm_hotspot_dir_path, exist_ok=True)
+    shutil.move(output_dir_path+"/"+mapped_hotspot_file, ptm_hotspot_dir_path)
+    shutil.move(output_dir_path+"/"+p_value_file, ptm_hotspot_dir_path)
+
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
 
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ Following two codes with perform all the codes on all the data /////////////////////////////////////
 #//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-def uniprot_data(): 
-
-    """ to perform all functions on UniProt(like ptm, domain and ab () functions) all together """ 
-
-    try:
-        ptm()
-    except IOError:
-        pass
-    try:
-        domain()
-    except IOError:
-        pass
-    try:
-        ab()
-    except IOError:
-        pass
-    try:
-        struc_map()
-    except IOError:
-        pass
-    try:
-        nucleo()
-    except IOError:
-        pass
-    return "The Uniprot data is resolved into functional for interpretation"
-
-
-def functional_data():
-
-    """ to perform all functions on UniProt(like ptm, domain and ab () functions) all together """
-
-    if not os.path.exists(protein_input_file):
-            raise StopIteration('because of missing mutation file')
+def uniprot_data(mutations, biogrid_IDs): 
+    """Call all functions that work with UniProt data."""
+    if not os.path.exists(mutation_prot_file_path):
+        raise StopIteration('Missing mutation file') #TODO: Should StopIteration raised here, or some other exception?
     else:
-        try:
-            intf()
-        except IOError:
-            pass
-        try:
-            pi()
-        except IOError:
-            pass
-        try:
-            withP()
-        except IOError:
-            pass
-        try:
-            betweenP()
-        except IOError:
-            pass
-        try:
-            hotS()
-        except IOError:
-            pass
-        return "The data from PTMcode and PTMfunc on PTMs functional biasedness is resolved into functional for interpretation"
+        ptm(mutations, biogrid_IDs)
+        domain(mutations, biogrid_IDs)
+        ab(mutations, biogrid_IDs)
+        struc_map(mutations, biogrid_IDs)
+        nucleo(mutations, biogrid_IDs)
+
+
+def functional_data(mutations, biogrid_IDs):
+    """Call all functions that work with PTMfunc and PTMcode data.""" 
+    if not os.path.exists(mutation_prot_file_path):
+        raise StopIteration('Missing mutation file') #TODO: Should StopIteration raised here, or some other exception?
+    else:
+        intf(mutations, biogrid_IDs)
+        pi(mutations, biogrid_IDs)
+        withP(mutations, biogrid_IDs)
+        betweenP(mutations, biogrid_IDs)
+        hotS(mutations, biogrid_IDs)
 
 
 #///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1608,175 +1671,126 @@ def functional_data():
 
 
 def ymap_genes():
+    """Call all functions to analyse DNA-level mutation input file.
+    
+    Convert the mutation input file at DNA-level to a mutations file at protein level.
+    Call all the functions that map mutations from the protein-level mutation file to features.
+    """
+    start_time = time.clock()
+    
+    if not os.path.exists(mutation_gene_file_path):
+        raise StopIteration('Missing mutation file') #TODO: Should StopIteration raised here, or some other exception?
+    if not os.path.exists(output_dir_path):
+        os.makedirs(output_dir_path, exist_ok=True)
+        os.chdir(output_dir_path)
+    else:
+        os.chdir(output_dir_path)
+        
+    mutation_file(mutation_gene_file_path, gff_file_path, d_id_map_file_path, mutation_prot_file_path, errors_file_path)
+    mutations = parse_mutations(mutation_prot_file_path)
+    biogrid_IDs = parse_biogrid(uniprot_biogrid_file_path)
+    uniprot_data(mutations, biogrid_IDs)
+    functional_data(mutations, biogrid_IDs)
+    sum_file_map(summary_file_path, final_report_file_path)
+    
+    y = (time.time() - start_time)
+    os.makedirs('yMap-results'+str(y))
+    
+    enrich(final_report_file_path)
+    preWeb(biogrid_IDs, final_report_file_path)
 
-    """ returns all the results of all the codes of yMap; starting from genetics coordinates of proteins """
-
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-        if not os.path.exists(output_path):
-            os.mkdir(output_path)
-            os.chdir(output_path)
-        else:
-            os.chdir(output_path)
-        try:
-            mutation_types_file()
-        except IOError:
-            pass
-        try:
-            uniprot_data()
-        except IOError:
-            pass
-        try:
-            functional_data()
-        except IOError:
-            pass
-        try:
-            sum_file_map()
-        except IOError:
-            pass
-        try:
-            y = (time.time() - start_time)
-            os.makedirs('yMap-results'+str(y))
-        except IOError:
-            pass
-        try:    
-            p = c.enrich('final_report.txt')
-        except IOError:
-            pass
-        try:
-            c.preWeb(uniprot_bioGrid_path, 'final_report.txt')
-        except IOError:
-            pass
-        try:
-            shutil.move(output_path+"/"+'PTMs', output_path+"/"+'yMap-results'+str(y))
-            shutil.move('Domains', output_path+"/"+'yMap-results'+str(y))
-            shutil.move('Nucleotide_binding',output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'A-B-sites', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PDB', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'Interface', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PPI', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PTMs_within_Proteins', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PTMs_between_Proteins',output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PTMs_hotSpots',output_path+"/"+'yMap-results'+str(y))
-            shutil.move(protein_input_file, output_path+"/"+'yMap-results'+str(y))
-            shutil.move(gene_input_file, output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'final_report.txt', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'pvalue.txt', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'biog.txt', output_path+"/"+'yMap-results'+str(y))
-            os.remove(output_path+"/"+'mutation_id.txt')
-            os.remove(output_path+"/"+'summary.txt')
-        except IOError: 
-            pass
-        os.chdir(wd)
-        return "All functional data from genomic coordinates is ready in about %s seconds" % (time.time() - start_time)
+    shutil.move(output_dir_path+"/"+'PTMs', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move('Domains', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move('Nucleotide_binding',output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'A-B-sites', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PDB', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'Interface', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PPI', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PTMs_within_Proteins', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PTMs_between_Proteins',output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PTMs_hotSpots',output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(mutation_prot_file_path, output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(mutation_gene_file_path, output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+final_report_file, output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+p_value_file, output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+biog_file, output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+errors_file, output_dir_path+"/"+'yMap-results'+str(y))
+    os.remove(summary_file_path)
+    
+    os.chdir(wd)
+        
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
 
 
 def ymap_proteins():
-
     """ returns all the results of all the codes of yMap; starting from proteins level mutation positions """
-
-    start_time = time.time()
-    if not os.path.exists(protein_input_file):
-        raise StopIteration('because of missing mutation file')
+    start_time = time.clock()
+    
+    if not os.path.exists(mutation_prot_file_path):
+        raise StopIteration('Missing mutation file') #TODO: Should StopIteration raised here, or some other exception?
     else:
-        if not os.path.exists(output_path):
-            os.mkdir(output_path)
-            os.chdir(output_path)
-        else:
-            os.chdir(output_path)
-        try:
-            uniprot_data()
-        except IOError:
-            pass
-        try:
-            functional_data()
-        except IOError:
-            pass
-        try:
-            sum_file_map()
-        except IOError:
-            pass
-        try:
-            y = (time.time() - start_time)
-            os.makedirs('yMap-results'+str(y))
-        except IOError:
-            pass
-        try:    
-            p = c.enrich('final_report.txt')
-        except IOError:
-            pass
-        try:
-            c.preWeb(uniprot_bioGrid_path, 'final_report.txt')
-        except IOError:
-            pass
-        try:
-            shutil.move(output_path+"/"+'PTMs', output_path+"/"+'yMap-results'+str(y))
-            shutil.move('Domains', output_path+"/"+'yMap-results'+str(y))
-            shutil.move('Nucleotide_binding',output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'A-B-sites', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PDB', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'Interface', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PPI', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PTMs_within_Proteins', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PTMs_between_Proteins',output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'PTMs_hotSpots',output_path+"/"+'yMap-results'+str(y))
-            shutil.move(protein_input_file, output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'final_report.txt', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'pvalue.txt', output_path+"/"+'yMap-results'+str(y))
-            shutil.move(output_path+"/"+'biog.txt', output_path+"/"+'yMap-results'+str(y))
-            os.remove(output_path+"/"+'mutation_id.txt')
-            os.remove(output_path+"/"+'summary.txt')
-        except IOError: 
-            pass
-        os.chdir(wd)
-        return "All functional data from proteins mutation-positions is ready in about %s seconds" % (time.time() - start_time)
+        os.makedirs(output_dir_path, exist_ok = True)
+        os.chdir(output_dir_path)
+    
+    mutations = parse_mutations(mutation_prot_file_path)
+    biogrid_IDs = parse_biogrid(uniprot_biogrid_file_path)
+    uniprot_data(mutations, biogrid_IDs)
+    functional_data(mutations, biogrid_IDs)
+    sum_file_map(summary_file_path, final_report_file_path)
+    
+    y = (time.time() - start_time)
+    os.makedirs('yMap-results'+str(y))
+    
+    enrich(final_report_file_path)
+    preWeb(biogrid_IDs, final_report_file_path)
+    
+    shutil.move(output_dir_path+"/"+'PTMs', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move('Domains', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move('Nucleotide_binding',output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'A-B-sites', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PDB', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'Interface', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PPI', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PTMs_within_Proteins', output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PTMs_between_Proteins',output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+'PTMs_hotSpots',output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(mutation_prot_file_path, output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+final_report_file, output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+p_value_file, output_dir_path+"/"+'yMap-results'+str(y))
+    shutil.move(output_dir_path+"/"+biog_file, output_dir_path+"/"+'yMap-results'+str(y))
+    os.remove(summary_file_path)
+    
+    os.chdir(wd)
+    
+    end_time = time.clock()
+    duration = end_time - start_time
+    
+    return duration
 
-
-def web(): 
-    """ NOTE: to use the following function change to dir to respective folder to run web based analysis """   
-    os.chdir(input('specify biog.txt path:'))   # specify biog.txt path:/yMap-results78.50792193412781
-    c.bweb('biog.txt')
-    return "Web is ready for networks exploration of mutated proteins"
-
-def path():
-    "Path to the BioGrid ids path for visualisation"
-    try:
-        os.chdir(raw_input("paste here path to biog.txt file:"))
-    except IOError:
-        pass
-    return "you need to provide path/to/biog.txt"
 
 if __name__ == "__main__":
     import argparse
-    
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('-d', '--ydata', help='downloads required data to run yMap successfully')
-    parser.add_argument('-g','--ygenes', help='performs the yMap on genes level mutation positions')
-    parser.add_argument('-p', '--yproteins', help='performs the yMap on proteins level mutation positions')
-    parser.add_argument('-w', '--yweb', help='generates BioGrid web pages for interactome visualisation; paste the path to biog.txt file')
-
+    parser.add_argument('-d', '--ydata', action='store_true', help='download data up-to-date data files to use with ygenes or yproteins')
+    parser.add_argument('-g', '--ygenes', action='store_true', help='map DNA-level mutation positions to protein annotations')
+    parser.add_argument('-p', '--yproteins', action='store_true', help='map protein-level mutation positions to protein annotations')
+    parser.add_argument('-w', '--yweb', help='open web page corresponding to a BioGrid ID in given file for interactome visualisation; '
+                                             'paste the path to biog.txt file')
     args = parser.parse_args()
+    
     if args.ydata:
-        try:
-            data()
-        except IOError:
-            pass
+        download()
+        data()
     elif args.ygenes:
-        try:
-            ymap_genes()
-        except IOError:
-            pass
+        ymap_genes()
     elif args.yproteins:
-        try:
-            ymap_proteins()
-        except IOError:
-            pass
+        ymap_proteins()
     elif args.yweb:
-        try:
-            web()
-        except IOError:
-            pass
+        if os.path.exists(args.yweb):    
+            bweb(args.yweb)
     else:
-        print ("to run a function seek help")
-
+        print("to run a function seek help")
