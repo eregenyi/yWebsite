@@ -14,21 +14,11 @@ import logging
 import re
 import csv
 import os.path
+import sys
 from .ymap import *
 import re
 from celery import task
 import datetime
-
-
-wd = os.getcwd()
-input_path = os.path.join(wd, 'ymap_webtool', 'data', 'input')
-output_path = os.path.join(wd, 'ymap_webtool', 'data', 'output') 
-archive_path = os.path.join(wd, 'ymap_webtool', 'data', 'archive') 
-input_file_name = "mutation.txt"
-output_file_name = "results.zip"
-archive_name = "results"
-download_name = "results.zip"
-gene_level_input_name = "mutated_proteins.txt"
 
 '''
 ######################################### Setting up logger (For debugging in command line) ###################
@@ -120,14 +110,26 @@ def clean_up(input_path, output_path, archive_path):
     '''
     Emtpies the folders that are given as argument
     '''
-    input_path = input_path
-    output_path = output_path
-    archive_path = archive_path
-    #erase the input, output, but keep the archive under another name
-    wipe_folder(input_path)
-    wipe_folder(output_path)
+
+    try:
+
+        wipe_folder(input_path)
+        wipe_folder(output_path)
+        wipe_folder(archive_path)
+
+        if os.path.isdir(input_path):
+            os.rmdir(input_path)
+        
+        if os.path.isdir(output_path):
+            os.rmdir(output_path)
+        
+        if os.path.isdir(archive_path):
+            os.rmdir(archive_path)
+
+    except Exception as e:
+        print(e)
+
     logger.debug("hello from cleanup")
-    #os.rename(os.path.join(archive_path, archive_name + ".zip"), os.path.join(archive_path, "archived" + str(i) + ".zip"))
 
 @task()            
 def run_yproteins():
@@ -151,7 +153,11 @@ def is_too_old(file, age_min = 15):
     @param age_min - the maximum allowed age of file in minutes (default: 15 minutes)
     @return True, if the file is older than age_min minutes, False otherwise
     '''
-    time_stamp = os.path.getmtime(file)
+
+    if sys.version_info.minor > 5:
+        time_stamp = os.path.getmtime(file)
+    else:
+        time_stamp = os.path.getmtime(str(file))
     file_age = datetime.datetime.fromtimestamp(time_stamp)
     accepted_minutes_ago = datetime.datetime.now()-datetime.timedelta(minutes = age_min)
     return file_age < accepted_minutes_ago

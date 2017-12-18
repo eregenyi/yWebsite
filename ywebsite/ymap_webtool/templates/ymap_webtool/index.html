@@ -59,7 +59,8 @@
 												
 												
 				<!--input field-->	
-				<input type="file" accept=".txt" name="myfile" id="browse_txt" class="inline" >
+                <input type="file" accept=".txt" name="myfile" id="browse_txt" class="inline" >
+                <input type="hidden" name="user_id" id="u_id" value={{user_id}} >
                                                 
                                     </div> 
 									
@@ -75,8 +76,10 @@
             {% if uploaded_file_url %}
             <p>File uploaded at: <a href="{{ uploaded_file_url }}">{{ uploaded_file_url }}</a></p>
             {% endif %}
-			
+
+            		
 </div>         
 </div>
+<div id="div_id" style="display: none;">{{user_id}}</div>
 </div>
 {% endblock %}
