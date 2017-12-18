@@ -26,7 +26,7 @@
 					$.ajax({
 						url: '/ymap_webtool/processing',
 						type: "GET",
-						data: {},
+						data: {"user_id": $("#div_id").text()},
 						success: function (data, textStatus, JQXHR) { 
 							console.log(data);
 							console.log(textStatus);
@@ -44,7 +44,8 @@
 							
     <p id="message">
         Your job is submitted and being processed. Please be patient.
-    </p>
+	</p>
+	<div id="div_id" style="display: none;">{{user_id}}</div>
 </div>
 {% endblock %}
 

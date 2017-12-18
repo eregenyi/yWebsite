@@ -17,6 +17,8 @@ class UploadFileForm(forms.Form):
 	'''
 	title = forms.CharField(max_length=50)
 	myfile = forms.FileField()
+	user_id = forms.HiddenInput()
+
   
 
 class ContactForm(forms.Form):
