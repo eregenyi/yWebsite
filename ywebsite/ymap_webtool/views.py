@@ -31,6 +31,18 @@ download_name = "results.zip"
 gene_level_input_name = "mutated_proteins.txt"
 i = 0
 
+'''
+ToDo: 
+- organize and document thte code some more
+- generate documentation using sphinx
+- make a new flowchart
+- enhance the READ_ME: 
+	prerequisits of the source code, detailed description, refer to the flowchart
+- create a ToDo for yMap and how it could include features that make the web app cleaner (databases!)
+- deploy on a free server
+- finish report
+
+'''
 
 '''
 ######################################### Setting up logger (For debugging in command line) ########################
@@ -175,24 +187,21 @@ def processing(request):
 
 	if is_protein(os.path.join(input_path, input_file_name)) is True:
 		logger.debug("it was a protein input file. running yproteins now")
-		#run_yproteins()
+		run_yproteins()
 	elif is_gene(os.path.join(input_path, input_file_name)) is True:
 		logger.debug("it was a gene input file. running ygenes now")
 		os.rename(os.path.join(input_path, input_file_name),
 				  os.path.join(input_path, gene_level_input_name))
 		logger.debug("now the file " + input_file_name +
 					 " is renamed to " + gene_level_input_name)
-		#run_ygenes()
+		run_ygenes()
 		logger.debug("finished processing the job")
 	else:
 		logger.debug("ERROR! Neither gene nor protein file!")
 		return HttpResponseRedirect('submission_fail')
 
-	make_archive(os.path.join(archive_path, archive_name),
-				 'zip', root_dir=output_path)
+	make_archive(os.path.join(archive_path, archive_name), 'zip', root_dir=output_path)
 	logger.debug("made an archive")
-	# wipe original results folder
-	# maybe keep the archive?
 	return render(request, "ymap_webtool/finished.html", context={"user_id": user_id})
 	return HttpResponseRedirect('finished')
 
