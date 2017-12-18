@@ -63,18 +63,9 @@ else:
 
 def index(request):
 	#specify the template to the Main page here. Django by default looks for templates in the templates folder
-	f = Path("running_job")
-	if not f.is_file():
-		logger.debug("No jobs are running currently (no job_running file)")
-		return render(request, 'ymap_webtool/index.html')
-	elif is_too_old(f, 15):
-		logger.debug("The program is stuck (too old job_running file)")
-		os.remove("running_job")
-		clean_up(input_path, output_path, archive_path)
-		return render(request, 'ymap_webtool/index.html')
-	else:
-		logger.debug("Another job is being processed. Come back later.")
-		return render(request, 'ymap_webtool/server_is_busy.html')
+	logger.debug("No jobs are running currently (no job_running file)")
+	user_id = str(69)
+	return render(request, 'ymap_webtool/index.html', {"user_id": user_id})
 
 def publications(request):
    	#Specify the template to the Publications page
@@ -119,12 +110,6 @@ def email_sent(request):
 	# specify the template to the email_sent page here #to send email @test
 	return render(request, 'ymap_webtool/contemail_sentact.html')
 
-def finished(request):
-	#Specify template to the page to display after submission
-	logger.debug("time to give back the finished page with the script for downloading the results")
-	is_running = False
-	return render(request, 'ymap_webtool/finished.html')
-
 def submission_fail(request):
 	#Specify template to the page to display if submission fails
 	#clean_up(input_path, output_path, archive_path)
@@ -155,13 +140,9 @@ def processing(request):
 	logger.debug("made an archive")
 	# wipe original results folder
 	# maybe keep the archive?
-	return HttpResponseRedirect('finished')
-
-def submitted(request):
-	logger.debug("the job should be submitted and passed to processing")
-	is_running = True
-	return render(request, 'ymap_webtool/submitted.html')
-
+	logger.debug("time to give back the finished page with the script for downloading the results")
+	is_running = False
+	return render(request, 'ymap_webtool/finished.html', {"user_id": user_id})
 
 def get_string(request):
 	'''
@@ -192,7 +173,7 @@ def get_string(request):
  
 
 
-def get_file(request):
+def submitted(request):
 	'''
 	takes a file that has been uploaded with the HTML form, 
 	validates its extension (only .txt is allowed!)
@@ -213,7 +194,9 @@ def get_file(request):
 			if validate_file_type(request.FILES['myfile'].name) is True:
 				save_file(request.FILES['myfile'], input_path, input_file_name)
 				logger.debug("get_file ran succcesfully")
-				return HttpResponseRedirect('submitted')
+				is_running = True
+				logger.debug("the job should be submitted and passed to processing")
+				return render(request, 'ymap_webtool/submitted.html')
 		else:
 			return HttpResponseRedirect('submission_fail')
 	else:
